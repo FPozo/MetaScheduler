@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Parameters>
+    <NetworkGenerator>
+        <Topology>
+            <TopologyInformation>
+                <NumberCollisionDomains>1</NumberCollisionDomains>
+            </TopologyInformation>
+            <Description>
+                <Difurcation>
+                    <NumberLinks>2</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                </Difurcation>
+                <Difurcation>
+                    <NumberLinks>-3</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                </Difurcation>
+                <Difurcation>
+                    <NumberLinks>-3</NumberLinks>
+                    <Link category="wireless">
+                        <Speed unit="MB/s">20</Speed>
+                        <CollisionDomain>1</CollisionDomain>
+                    </Link>
+                    <Link category="wireless">
+                        <Speed unit="MB/s">20</Speed>
+                        <CollisionDomain>1</CollisionDomain>
+                    </Link>
+                    <Link category="wireless">
+                        <Speed unit="MB/s">20</Speed>
+                        <CollisionDomain>1</CollisionDomain>
+                    </Link>
+                </Difurcation>
+            </Description>
+        </Topology>
+        <Traffic>
+            <TrafficInformation>
+                <NumberFrames>100</NumberFrames>
+                <Single>0.2</Single>
+                <Local>0.2</Local>
+                <Multiple>0.3</Multiple>
+                <Broadcast>0.3</Broadcast>
+            </TrafficInformation>
+            <FrameDescription>
+                <FrameType>
+                    <Period unit="ms">1000</Period>
+                    <Deadline unit="ms">1000</Deadline>
+                    <Size unit="Bytes">1500</Size>
+                    <Percentage>0.7</Percentage>
+                </FrameType>
+                <FrameType>
+                    <Period unit="ms">1000</Period>
+                    <Deadline unit="ms">800</Deadline>
+                    <Size unit="Bytes">1000</Size>
+                    <Percentage>0.3</Percentage>
+                </FrameType>
+            </FrameDescription>
+            <Dependencies>
+                <NumberDependences>10</NumberDependences>
+                <MinDepth>1</MinDepth>
+                <MaxDepth>3</MaxDepth>
+                <MinChildren>1</MinChildren>
+                <MaxChildren>3</MaxChildren>
+                <MinTimeWaiting unit="ms">100</MinTimeWaiting>
+                <MaxTimeWaiting unit="ms">300</MaxTimeWaiting>
+                <MinTimeDeadline unit="ms">25</MinTimeDeadline>
+                <MaxtimeDeadline unit="ms">80</MaxtimeDeadline>
+                <Waiting>0.3</Waiting>
+                <Deadline>0.5</Deadline>
+                <WaitingDeadline>0.2</WaitingDeadline>
+            </Dependencies>
+        </Traffic>
+    </NetworkGenerator>
+</Parameters>
