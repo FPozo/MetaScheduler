@@ -4,7 +4,7 @@
  *  Network Generator                                                                                                  *
  *                                                                                                                     *
  *  Created by Francisco Pozo on 18/04/17.                                                                             *
- *  Copyright © 2016 Francisco Pozo. All rights reserved.                                                              *
+ *  Copyright © 2017 Francisco Pozo. All rights reserved.                                                              *
  *                                                                                                                     *
  *  Class for the frames in the network. A frame has only one node (end system) sender and one or multiple (also end   *
  *  systems) receivers. All frames must have a period in microseconds and a in bytes in the range of the Ethernet      *
