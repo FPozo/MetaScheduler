@@ -1,0 +1,1 @@
+from NetworkGenerator.Network import *
