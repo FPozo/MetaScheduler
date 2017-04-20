@@ -3,10 +3,24 @@
     <NetworkGenerator>
         <Topology>
             <TopologyInformation>
-                <NumberCollisionDomains>1</NumberCollisionDomains>
+                <NumberCollisionDomains>2</NumberCollisionDomains>
+                <NumberReplicas>2;1</NumberReplicas>
+                <NumberReplicas>1;2</NumberReplicas>
+                <ReplicaPolicy>Spread</ReplicaPolicy>
+                <ReplicaPolicy>Continuous</ReplicaPolicy>
+                <ReplicaInterArrivalTime unit="us">150</ReplicaInterArrivalTime>
+                <ReplicaInterArrivalTime unit="ms">1</ReplicaInterArrivalTime>
+                <MinTimeSwitch unit="ns">100</MinTimeSwitch>
+                <MinTimeSwitch unit="us">10</MinTimeSwitch>
+                <MaxTimeSwitch unit="ms">1</MaxTimeSwitch>
+                <MaxTimeSwitch unit="us">100</MaxTimeSwitch>
+                <SensingControlPeriod unit="us">5000</SensingControlPeriod>
+                <SensingControlPeriod unit="ms">10</SensingControlPeriod>
+                <SensingControlTime unit="us">100</SensingControlTime>
+                <SensingControlTime unit="ms">1</SensingControlTime>
             </TopologyInformation>
             <Description>
-                <Difurcation>
+                <Bifurcation>
                     <NumberLinks>2</NumberLinks>
                     <Link category="wired">
                         <Speed unit="MB/s">100</Speed>
@@ -14,8 +28,8 @@
                     <Link category="wired">
                         <Speed unit="MB/s">100</Speed>
                     </Link>
-                </Difurcation>
-                <Difurcation>
+                </Bifurcation>
+                <Bifurcation>
                     <NumberLinks>-3</NumberLinks>
                     <Link category="wired">
                         <Speed unit="MB/s">50</Speed>
@@ -26,8 +40,8 @@
                     <Link category="wired">
                         <Speed unit="MB/s">50</Speed>
                     </Link>
-                </Difurcation>
-                <Difurcation>
+                </Bifurcation>
+                <Bifurcation>
                     <NumberLinks>-3</NumberLinks>
                     <Link category="wireless">
                         <Speed unit="MB/s">20</Speed>
@@ -41,7 +55,53 @@
                         <Speed unit="MB/s">20</Speed>
                         <CollisionDomain>1</CollisionDomain>
                     </Link>
-                </Difurcation>
+                </Bifurcation>
+            </Description>
+        </Topology>
+        <Topology>
+            <TopologyInformation>
+                <NumberCollisionDomains>1</NumberCollisionDomains>
+                <NumberReplicas>1</NumberReplicas>
+                <ReplicaPolicy>Spread</ReplicaPolicy>
+                <ReplicaInterArrivalTime unit="us">150</ReplicaInterArrivalTime>
+                <MinTimeSwitch unit="ns">100</MinTimeSwitch>
+                <MaxTimeSwitch unit="ms">1</MaxTimeSwitch>
+                <SensingControlPeriod unit="us">5000</SensingControlPeriod>
+                <SensingControlTime unit="us">100</SensingControlTime>
+            </TopologyInformation>
+            <Description>
+                <Bifurcation>
+                    <NumberLinks>2</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-3</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-2</NumberLinks>
+                    <Link category="wireless">
+                        <Speed unit="MB/s">20</Speed>
+                        <CollisionDomain>1</CollisionDomain>
+                    </Link>
+                    <Link category="wireless">
+                        <Speed unit="MB/s">20</Speed>
+                        <CollisionDomain>1</CollisionDomain>
+                    </Link>
+                </Bifurcation>
             </Description>
         </Topology>
         <Traffic>
@@ -51,6 +111,13 @@
                 <Local>0.2</Local>
                 <Multiple>0.3</Multiple>
                 <Broadcast>0.3</Broadcast>
+            </TrafficInformation>
+            <TrafficInformation>
+                <NumberFrames>200</NumberFrames>
+                <Single>0.8</Single>
+                <Local>0.1</Local>
+                <Multiple>0.0</Multiple>
+                <Broadcast>0.01</Broadcast>
             </TrafficInformation>
             <FrameDescription>
                 <FrameType>
@@ -66,8 +133,30 @@
                     <Percentage>0.3</Percentage>
                 </FrameType>
             </FrameDescription>
+            <FrameDescription>
+                <FrameType>
+                    <Period unit="us">1000</Period>
+                    <Deadline unit="s">800</Deadline>
+                    <Size unit="Bytes">1000</Size>
+                    <Percentage>0.3</Percentage>
+                </FrameType>
+                <FrameType>
+                    <Period unit="ns">1000</Period>
+                    <Percentage>0.7</Percentage>
+                </FrameType>
+            </FrameDescription>
+            <FrameDescription>
+                <FrameType>
+                    <Period unit="us">1000</Period>
+                    <Percentage>0.3</Percentage>
+                </FrameType>
+                <FrameType>
+                    <Period unit="ns">1000</Period>
+                    <Percentage>0.7</Percentage>
+                </FrameType>
+            </FrameDescription>
             <Dependencies>
-                <NumberDependences>10</NumberDependences>
+                <NumberDependencies>10</NumberDependencies>
                 <MinDepth>1</MinDepth>
                 <MaxDepth>3</MaxDepth>
                 <MinChildren>1</MinChildren>
@@ -75,7 +164,21 @@
                 <MinTimeWaiting unit="ms">100</MinTimeWaiting>
                 <MaxTimeWaiting unit="ms">300</MaxTimeWaiting>
                 <MinTimeDeadline unit="ms">25</MinTimeDeadline>
-                <MaxtimeDeadline unit="ms">80</MaxtimeDeadline>
+                <MaxTimeDeadline unit="ms">80</MaxTimeDeadline>
+                <Waiting>0.3</Waiting>
+                <Deadline>0.5</Deadline>
+                <WaitingDeadline>0.2</WaitingDeadline>
+            </Dependencies>
+            <Dependencies>
+                <NumberDependencies>100</NumberDependencies>
+                <MinDepth>1</MinDepth>
+                <MaxDepth>3</MaxDepth>
+                <MinChildren>1</MinChildren>
+                <MaxChildren>3</MaxChildren>
+                <MinTimeWaiting unit="ms">90</MinTimeWaiting>
+                <MaxTimeWaiting unit="ms">200</MaxTimeWaiting>
+                <MinTimeDeadline unit="ms">15</MinTimeDeadline>
+                <MaxTimeDeadline unit="ms">70</MaxTimeDeadline>
                 <Waiting>0.3</Waiting>
                 <Deadline>0.5</Deadline>
                 <WaitingDeadline>0.2</WaitingDeadline>
