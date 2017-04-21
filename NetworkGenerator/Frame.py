@@ -23,8 +23,8 @@ class Frame:
     __sender = None                         # End system sender id of the frame
     __receivers = []                        # List of end systems receivers id of the frame
     __size = None                           # Size of the frame in bytes (it must be between 72 and 1526 bytes)
-    __period = None                         # Period in microseconds of the frame
-    __deadline = None                       # Deadline in microseconds of the frame (if 0 => same as period)
+    __period = None                         # Period in nanoseconds of the frame
+    __deadline = None                       # Deadline in nanoseconds of the frame (if 0 => same as period)
 
     # Standard function definitions #
 

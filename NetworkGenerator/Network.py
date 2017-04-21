@@ -18,10 +18,272 @@ from NetworkGenerator.Dependency import *
 from NetworkGenerator.Frame import *
 from NetworkGenerator.Link import *
 from random import random, choice, shuffle, randint
+from copy import deepcopy
+from functools import reduce
 import xml.etree.ElementTree as Xml
 import networkx as nx
 import logging
 import copy
+import os
+import shutil
+
+
+# Auxiliary functions
+
+def gcd(a, b):
+    """Return greatest common divisor using Euclid's Algorithm."""
+    while b:
+        a, b = b, a % b
+    return a
+
+
+def lcm(a, b):
+    """Return lowest common multiple."""
+    return a * b // gcd(a, b)
+
+
+def lcm_multiple(*args):
+    """Return lcm of args."""
+    return reduce(lcm, args)
+
+
+class NetworkConfiguration:
+    """
+    Class that contains all the needed parameters to create a network, it also provides some functions to remove 
+    impossible configurations
+    """
+
+    network = None
+    link = None
+    preprocessed_collision_domains = []
+    replicas = []
+    replica_policy = None
+    replica_interval = None
+    minimum_switch = None
+    maximum_switch = None
+    sensing_control_period = None
+    sensing_control_time = None
+    num_frames = None
+    single = None
+    local = None
+    multi = None
+    broad = None
+    periods = []
+    per_periods = []
+    deadlines = []
+    sizes = []
+    num_dependencies = None
+    min_depth = None
+    max_depth = None
+    min_children = None
+    max_children = None
+    min_time_waiting = None
+    max_time_waiting = None
+    min_time_deadline = None
+    max_time_deadline = None
+    waiting = None
+    deadline = None
+    waiting_deadline = None
+
+    def set_topology_parameters(self, network, link):
+        """
+        Sets the topology parameters
+        :param network: network description
+        :param link: link description
+        :return: 
+        """
+        self.network = network
+        self.link = link
+
+    def set_collision_domains_parameter(self, collision_domains):
+        """
+        Set the number of collision domains parameter
+        :param collision_domains: number of collision domains
+        :return: 
+        """
+        self.preprocessed_collision_domains = collision_domains
+
+    def set_replicas_parameter(self, list_replicas):
+        """
+        Set the list of replicas parameters
+        :param list_replicas: list of replicas
+        :return: 
+        """
+        self.replicas = list_replicas
+
+    def set_replica_policy_parameter(self, replica_policy):
+        """
+        Set the replica policy parameter
+        :param replica_policy: replica policy string
+        :return: 
+        """
+        self.replica_policy = replica_policy
+
+    def set_replica_interval_parameter(self, replica_interval):
+        """
+        Set the replica interval parameter
+        :param replica_interval: replica interval
+        :return: 
+        """
+        self.replica_interval = replica_interval
+
+    def set_minimum_switch_parameter(self, minimum_switch):
+        """
+        Set the minimum switch time parameter
+        :param minimum_switch: minimum time parameter
+        :return: 
+        """
+        self.minimum_switch = minimum_switch
+
+    def set_maximum_switch_parameter(self, maximum_switch):
+        """
+        Set the maximum time in the switch parameter
+        :param maximum_switch: maximum time in switch parameter
+        :return: 
+        """
+        self.maximum_switch = maximum_switch
+
+    def set_sensing_control_period_parameter(self, sensing_control_period):
+        """
+        Set the sensing and control period parameter
+        :param sensing_control_period: sensing and control period
+        :return: 
+        """
+        self.sensing_control_period = sensing_control_period
+
+    def set_sensing_control_time_parameter(self, sensing_control_time):
+        """
+        Set the sensing and control time parameter
+        :param sensing_control_time: sensing and control time
+        :return: 
+        """
+        self.sensing_control_time = sensing_control_time
+
+    def set_traffic_information_parameters(self, num_frames, single, local, multiple, broadcast):
+        """
+        Set the traffic information parameters
+        :param num_frames: number of frames
+        :param single: percentage of frames that are sent to a single end system
+        :param local: percentage of frames that have length of 2 
+        :param multiple: percentage of frames that are sent to [2, number of frames - 1] end systems
+        :param broadcast: percentage of frames that are sent to all the end systems
+        :return: 
+        """
+        self.num_frames = num_frames
+        self.single = single
+        self.local = local
+        self.multi = multiple
+        self.broad = broadcast
+
+    def set_frames_description_parameters(self, periods, per_periods, deadlines, sizes):
+        """
+        Set the frame description parameters
+        :param periods: list of periods
+        :param per_periods: list of per_periods
+        :param deadlines: list of deadlines
+        :param sizes: list of sizes
+        :return: 
+        """
+        self.periods = periods
+        self.per_periods = per_periods
+        self.deadlines = deadlines
+        self.sizes = sizes
+
+    def set_dependency_parameters(self, num_dependencies, min_depth, max_depth, min_children, max_children,
+                                  min_time_waiting, max_time_waiting, min_time_deadline, max_time_deadline, waiting,
+                                  deadline, waiting_deadline):
+        """
+        Set the dependency parameters
+        :param num_dependencies: 
+        :param min_depth: 
+        :param max_depth: 
+        :param min_children: 
+        :param max_children: 
+        :param min_time_waiting: 
+        :param max_time_waiting: 
+        :param min_time_deadline: 
+        :param max_time_deadline: 
+        :param waiting: 
+        :param deadline: 
+        :param waiting_deadline: 
+        :return: 
+        """
+        self.num_dependencies = num_dependencies
+        self.min_depth = min_depth
+        self.max_depth = max_depth
+        self.min_children = min_children
+        self.max_children = max_children
+        self.min_time_waiting = min_time_waiting
+        self.max_time_waiting = max_time_waiting
+        self.min_time_deadline = min_time_deadline
+        self.max_time_deadline = max_time_deadline
+        self.waiting = waiting
+        self.deadline = deadline
+        self.waiting_deadline = waiting_deadline
+
+    def formalize_configuration(self):
+        """
+        Changes the variables that are useless to a None value
+        :return: 
+        """
+        # If there is no replicas, then we do not have replica configuration parameters
+        if self.replicas is None or all(replica == 0 for replica in self.replicas):
+            self.replica_interval = None
+            self.replica_policy = None
+
+        # If one of the values of the sensing and control is 0, then both are not valid
+        if self.sensing_control_time == 0 or self.sensing_control_period == 0:
+            self.sensing_control_period = None
+            self.sensing_control_time = None
+
+        # If the replica policy is continuous, the interval is irrelevant
+        if self.replica_policy == 'Continuous':
+            self.replica_interval = None
+
+        # If there are no collision domains, it means there is no wireless transmissions, and then no need of wireless
+        # configurations
+        if len(self.preprocessed_collision_domains) == 0:
+            self.replicas = None
+            self.replica_interval = None
+            self.replica_policy = None
+            self.sensing_control_time = None
+            self.sensing_control_period = None
+
+        # If there is no dependencies make irrelevant the other values
+        if self.num_dependencies == 0:
+            self.min_depth = None
+            self.max_depth = None
+            self.min_children = None
+            self.max_children = None
+            self.min_time_waiting = None
+            self.max_time_waiting = None
+            self.min_time_deadline = None
+            self.max_time_deadline = None
+            self.waiting = None
+            self.deadline = None
+            self.waiting_deadline = None
+
+    def is_it_valid(self):
+        """
+        Check if the current configuration is valid (There is a possibility that the network can be scheduled)
+        :return: True if valid, False if not valid
+        """
+        # If the sensing and control time is larger than the period
+        if (self.sensing_control_time is not None and self.sensing_control_period is not None) and \
+                self.sensing_control_time > self.sensing_control_period:
+            return False
+
+        # If the minimum time for a frame in the switch is larger than the maximum
+        if self.minimum_switch > self.maximum_switch:
+            return False
+
+        return True
+
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return self.__dict__ != other.__dict__
 
 
 class Network:
@@ -37,8 +299,6 @@ class Network:
     __links = []  # List with all the links IDENTIFIERS in the network
     __links_object_container = []  # List with all the links OBJECTS in the network (cannot be saved in graph)
     __collision_domains = []  # Matrix with list of links that share the same wireless frequency
-    __collision_domains_preprocessed = []  # Matrix with list of links of that are in the collision domain before
-    # creating the network and knowing the REAL link placement for the link
     __paths = []  # Matrix with the number of end systems as index for x and y, it contains
     # a list of links to describe the path from end system x to end system y, None if x = y
     __aux_frames = []  # Auxiliary list with all frames in the network to help create dependencies
@@ -53,12 +313,12 @@ class Network:
         Initialization of an empty network
         """
         logging.basicConfig(level=logging.DEBUG)
-        self.__graph = None
+        self.__graph = nx.Graph()
         self.__switches = []
         self.__end_systems = []
         self.__links = []
+        self.__links_object_container = []
         self.__collision_domains = []
-        self.__collision_domains_preprocessed = []
         self.__paths = []
         self.__frames = []
         self.__aux_frames = []
@@ -102,7 +362,7 @@ class Network:
         self.__links_object_container.append(Link(speed=speed, link_type=link_type))  # Saves the object with same index
         self.__links_object_container.append(Link(speed=speed, link_type=link_type))
 
-    def __add_link_information(self, links, num_links, branch, parent_node):
+    def __add_link_information(self, pre_col_dom, links, num_links, branch, parent_node):
         """
         Reads the link information and check if is needed to add it to the collision domain, then creates the link
         :param links: links description
@@ -122,12 +382,11 @@ class Network:
             speed = 100
 
         # If the link is included in a collision domain, it is added to the collision domain matrix
-        for index_col, collision_domain in enumerate(self.__collision_domains):
+        for index_col, collision_domain in enumerate(pre_col_dom):
             for index_link, link in enumerate(collision_domain):
                 # If the link is included in the collision domain preprocessed array, save it now with the
                 # correct link value now that we know it (both directions)
-                if self.__collision_domains_preprocessed[index_col][index_link] == (
-                            num_links + branch) + 1:
+                if pre_col_dom[index_col][index_link] == (num_links + branch) + 1:
                     # The real number of link is the last added link, this information is in the graph
                     self.__collision_domains[index_col].append((self.__graph.number_of_edges()) * 2)
                     self.__collision_domains[index_col].append(((self.__graph.number_of_edges()) * 2) + 1)
@@ -146,16 +405,7 @@ class Network:
         self.__end_systems.append(switch)  # Update the information into our lists
         self.__switches.remove(switch)
 
-    def __init_collision_domain(self, number_collision_domains):
-        """
-        Initialize the matrix with the number of collision domains
-        :param number_collision_domains: number of collision domains
-        :return: 
-        """
-        for _ in range(number_collision_domains):
-            self.__collision_domains.append([])
-
-    def __recursive_create_network(self, description, links, parent_node, num_calls, num_links):
+    def __recursive_create_network(self, description, pre_col_dom, links, parent_node, num_calls, num_links):
         """
         Auxiliary recursive function for create network
         :param description: description of the network already parsed into integers
@@ -171,7 +421,7 @@ class Network:
                 # For all the new leafs, add the end system to the network and link it to the parent node
                 for leaf in range(abs(description[num_calls])):
                     self.__add_end_system()
-                    self.__add_link_information(links, num_links, leaf, parent_node)
+                    self.__add_link_information(pre_col_dom, links, num_links, leaf, parent_node)
                 # Return subtracting the last links created by the last branch from the number of links, we want the
                 # number of links when the branch is starting, no after (due to recursion)
                 return num_links - int(description[num_calls]), num_calls
@@ -188,7 +438,7 @@ class Network:
                     self.__add_switch()
                     new_parent = self.__graph.number_of_nodes() - 1  # Save the new parent node for later
                     # Read all the information of the link and add it
-                    self.__add_link_information(links, num_links, branch, parent_node)
+                    self.__add_link_information(pre_col_dom, links, num_links, branch, parent_node)
 
                     # Check which link is calling, if last call is bigger, set it to last call
                     if last_call_link > it_links + (int(description[num_calls]) - branch):
@@ -197,8 +447,9 @@ class Network:
                         links_to_call = it_links + (int(description[num_calls] - branch))
                     # Call the recursive for the new branch, we save the last call link to recover it when we return
                     # after the branch created by this recursive call is finished
-                    last_call_link, num_calls = self.__recursive_create_network(description, links, new_parent,
-                                                                                num_calls + 1, links_to_call)
+                    last_call_link, num_calls = self.__recursive_create_network(description, pre_col_dom, links,
+                                                                                new_parent, num_calls + 1,
+                                                                                links_to_call)
 
                 return last_call_link, num_calls  # Return when all branches have been created and closed
 
@@ -207,10 +458,11 @@ class Network:
 
     # Public function definitions #
 
-    def create_network(self, network_description, link_description=None):
+    def create_topology(self, network_description, pre_col_dom=None, link_description=None):
         """
         Creates a network with the description received
         :param network_description: string with the data of the network, it follows an special description
+        :param pre_col_dom: matrix with the collision domains saved from before (but links are not normalized yet)
         :param link_description: string with the description of all the links, if None, all are wired and 100 MBs
         There are numbers divided by semicolons, every number indicates the number of children for the actual switch
         If the number is negative, it means it has x end systems: ex: -5 means 5 end systems
@@ -222,11 +474,13 @@ class Network:
         x10 => wireless with 10 MBs
         :return: None
         """
-        logging.debug(network_description)
-        self.__init__()
+        # Copy the preprocessed collision domain before deleting it
+        self.__init__()                     # Clean everything when creating a new topology
+        for _ in range(len(pre_col_dom)):   # Create the real collision domain matrix
+            self.__collision_domains.append([])
         description_array = network_description.split(';')  # Separate the description string in an array
         description = [int(numeric_string) for numeric_string in description_array]  # Parse the string into int
-        if link_description is not None:  # Separate also the link description if exist
+        if link_description is not None:    # Separate also the link description if exist
             links = link_description.split(';')
         else:
             links = None
@@ -235,23 +489,11 @@ class Network:
         self.__add_switch()
         # Num links and num calls are auxiliary variables to map the order in which the links are created and to check
         # if the creation of the network was successful
-        num_links, num_calls = self.__recursive_create_network(description, links, 0, 0, 0)
+        num_links, num_calls = self.__recursive_create_network(description, pre_col_dom, links, 0, 0, 0)
 
         # Check if there are additional elements that should not be in the network
         if num_calls != len(description) - 1:
             raise ValueError("The network description is wrongly formulated, there are extra elements")
-        logging.debug("End Systems => " + str(len(self.__end_systems)))
-        logging.debug("Switches => " + str(len(self.__switches)))
-        logging.debug("Links => " + str(len(self.__links)))
-        logging.debug(self.__collision_domains)
-
-    def define_collision_domains(self, collision_domains):
-        """
-        Defines the wireless links that share the same frequency
-        :param collision_domains: matrix, every x is a list of links that are in the same collision domain
-        :return:
-        """
-        self.__collision_domains = map(list, collision_domains)  # Copy the matrix to the local object
 
     def generate_paths(self):
         """
@@ -341,8 +583,6 @@ class Network:
 
         # Iterate for all the frames that needs to be created
         for frame in range(number_frames):
-            if frame % 1000 == 0:
-                logging.debug("Frame => " + str(frame))
             frame_type = random()  # Generate random to see which type of frame is
             sender = choice(self.__end_systems)  # Select the sender end system
 
@@ -396,12 +636,12 @@ class Network:
                 if type_period < per_period + accumulate_period:  # Choice one period for the frame
                     self.__frames[i].set_period(periods[j])  # Set a period to the frame
 
-                    if deadlines is not None or deadlines[j] is not None:
+                    if deadlines is not None and deadlines[j] is not None:
                         self.__frames[i].set_deadline(int(deadlines[j]))  # Set the deadline
                     else:
                         self.__frames[i].set_deadline(periods[j])  # If not, deadline = period
 
-                    if sizes is not None or sizes[j] is not None:  # If there are sizes, set it
+                    if sizes is not None and sizes[j] is not None:  # If there are sizes, set it
                         self.__frames[i].set_size(sizes[j])
 
                     break  # Once selected, go out
@@ -515,6 +755,10 @@ class Network:
         :param per_both: percentage of both dependencies
         :return:
         """
+        # If there is no dependencies, just go out
+        if number_dep == 0:
+            return
+
         # Normalize the percentage so the sum is always 1.0
         sum_per = float(per_waiting + per_deadline + per_both)
         per_waiting /= sum_per
@@ -542,15 +786,82 @@ class Network:
                                     per_both, predecessor_frame_index, predecessor_link)
             self.__num_dependencies = len(self.__dependencies)
 
+    @staticmethod
+    def calculate_hyper_period(periods):
+        """
+        Calculates the hyper_period of the network
+        :param periods: list of periods to calculate the hyper_period
+        :return: the hyper_period
+        """
+        return lcm_multiple(*periods)
+
+    def calculate_utilization(self, hyper_period, replicas, sensing_period, sensing_time):
+        """
+        Calculates the utilization on all its links, and then return the total utilization of the network
+        :param hyper_period: Hyper_period of the network
+        :param replicas: list of number of replicas per collision domain
+        :param sensing_period: sensing and control period
+        :param sensing_time: sensing and control time
+        :return: utilization of the network and True if all links have less than 1 utilization
+        """
+        # Init the list where the utilization will be saved for every link
+        link_utilization = []
+        for _ in self.__links:
+            link_utilization.append(0)
+
+        # For all frames in the network
+        for frame in self.__frames:
+            # Get all the unique links in the paths of the frame
+            unique_links = []
+            for receiver in frame.get_receivers():
+                # For all links in the path
+                for link in self.__paths[frame.get_sender()][receiver]:
+                    if link not in unique_links:        # If is unique, add it
+                        unique_links.append(link)
+
+            # Once we have all the links in the path, calculate the ns to transmit for all links
+            for link in unique_links:
+                # First calculate the time occupied by normal transmissions and its period instances
+                link_utilization[link] += int(((frame.get_size() * 1000) /
+                                               self.__links_object_container[link].get_speed()) *
+                                              (hyper_period / frame.get_period()))
+
+                # Then, add the retransmissions if the link has any
+                if self.__links_object_container[link].get_type() == LinkType.wireless:
+                    for index, collision_domain in enumerate(self.__collision_domains):
+                        if link in collision_domain:
+                            link_utilization[link] += int((((frame.get_size() * 1000) /
+                                                            self.__links_object_container[link].get_speed()) *
+                                                           (hyper_period / frame.get_period())) * replicas[index])
+
+        # Last, add the time occupied by sensing and control
+        if sensing_period is not None:
+            for index, link in enumerate(self.__links_object_container):
+                if link.get_type() == LinkType.wireless:
+                    link_utilization[index] += int((hyper_period / sensing_period) * sensing_time)
+
+        # Now calculate the utilization in float for every link and calculate the total utilization of the network
+        utilization = 0.0
+        possible = True
+        for index, link in enumerate(link_utilization):
+            link_utilization[index] /= hyper_period
+            if link_utilization[index] > 1.0:       # Check if is possible to schedule all of its links
+                possible = False
+            utilization += link_utilization[index]
+        return utilization / len(link_utilization), possible
+
     # Input and Output function definitions #
 
-    def get_network_topology_from_xml(self, name, index_network):
+    # Input function definitions #
+
+    @staticmethod
+    def get_network_topology_from_xml(name, index_network):
         """
         Returns the network description (including the link description if exist) from the xml file
         :param name: name of the xml file
         :param index_network: position of the network in the xml to read
-        :return: array with network description and array with link description (formatted to work in the network
-        function)
+        :return: array with network description, the preprocessed collision domain array and array with link 
+        description (formatted to work in the network function)
         """
         # Open the file if exists
         try:
@@ -565,8 +876,10 @@ class Network:
         # Read Initialize the number of collision domains from the topology information
         topology_information_xml = network_description_xml.find('TopologyInformation')
         num_collision_domains = int(topology_information_xml.find('NumberCollisionDomains').text)
+
+        collision_domains_preprocessed = []
         for _ in range(num_collision_domains):  # For all the collision domains, add an empty list to the matrix
-            self.__collision_domains_preprocessed.append([])
+            collision_domains_preprocessed.append([])
 
         # Initialize strings to be returned with the description
         network_description_line = ''
@@ -614,7 +927,7 @@ class Network:
                         collision_domain_string = link_xml.find('CollisionDomain').text
                         collision_domains = collision_domain_string.split(';')
                         for collision_domain in collision_domains:  # For every collision domain in the link, save it
-                            self.__collision_domains_preprocessed[int(collision_domain) - 1].append(link)
+                            collision_domains_preprocessed[int(collision_domain) - 1].append(link)
 
             # Check if the number of links said by the bifurcation and the encounter links match
             if abs(number_links) != links_counter:
@@ -624,9 +937,9 @@ class Network:
 
         # Return the description string, and the link description string if exists
         if not links_found:
-            return network_description_line[0:-1], None
+            return network_description_line[0:-1], collision_domains_preprocessed, None
         else:
-            return network_description_line[0:-1], link_info_line[0:-1]
+            return network_description_line[0:-1], collision_domains_preprocessed, link_info_line[0:-1]
 
     @staticmethod
     def get_number_replicas_from_xml(name, index_network, index_replica):
@@ -1082,5 +1395,239 @@ class Network:
         waiting_deadline = float(dependencies_parameter_xml.find('WaitingDeadline').text)
 
         # Return everything
-        return num_dependencies, min_depth, max_depth, min_children, max_children, min_time_waiting, max_time_waiting, \
-            min_time_deadline, max_time_deadline, waiting, deadline, waiting_deadline
+        return num_dependencies, min_depth, max_depth, min_children, max_children, min_time_waiting, \
+            max_time_waiting, min_time_deadline, max_time_deadline, waiting, deadline, waiting_deadline
+
+    # Output function definitions #
+
+    def create_networks_from_xml(self, name):
+        """
+        Create all the networks possible from the configuration xml file. They are nested under a folder "network" and
+        for every network, a folder with a hashed name is created, that contains the xml that describes the network and
+        all its traffic. The xml network file will have the same hashed name as the folder
+        :param name: name of the configuration xml file
+        :return: 
+        """
+        # Open the file if exists
+        try:
+            tree = Xml.parse(name)
+        except:
+            raise Exception("Could not read the xml file")
+        root = tree.getroot()
+
+        # Create the folder "networks", if already exists, delete it and create it empty again
+        try:
+            os.makedirs("networks")
+        except FileExistsError:
+            shutil.rmtree("networks")
+            os.makedirs("networks")
+
+        # Variables for statistics of creation of networks
+        total_networks = 0          # Count the number of all networks configurations
+        schedulable_networks = 0    # Count the number of networks that will be created to schedule
+
+        # Start reading how many different values are in the configuration file to create every possible network
+        num_topologies = len(root.findall('NetworkGenerator/Topology'))
+        num_traffic_information = len(root.findall('NetworkGenerator/Traffic/TrafficInformation'))
+        num_frame_descriptions = len(root.findall('NetworkGenerator/Traffic/FrameDescription'))
+        num_dependencies_configurations = len(root.findall('NetworkGenerator/Traffic/Dependencies'))
+
+        # Init variables to enter the for loop if there is 0 configuration of that variable
+        dependency_configuration_null = False
+        replica_null = False
+        policy_null = False
+        interval_null = False
+        minimum_switch_null = False
+        maximum_switch_null = False
+        sensing_control_period_null = False
+        sensing_control_time_null = False
+
+        conf = NetworkConfiguration()
+        list_unique_conf = []           # List of all unique configurations
+
+        # For all topologies found in the configuration file, read the number of different configurations
+        for topology_index in range(num_topologies):
+            # Get the network description for the topology
+
+            # Get the number of different configurations for that topology
+            topology_xml = root.findall('NetworkGenerator/Topology')[topology_index]
+            topology_information_xml = topology_xml.find('TopologyInformation')
+
+            num_replicas = len(topology_information_xml.findall('NumberReplicas'))
+            num_policies = len(topology_information_xml.findall('ReplicaPolicy'))
+            num_intervals = len(topology_information_xml.findall('ReplicaInterArrivalTime'))
+            num_minimum_switch = len(topology_information_xml.findall('MinTimeSwitch'))
+            num_maximum_switch = len(topology_information_xml.findall('MaxTimeSwitch'))
+            num_sensing_control_period = len(topology_information_xml.findall('SensingControlPeriod'))
+            num_sensing_control_time = len(topology_information_xml.findall('SensingControlTime'))
+
+            # If there is no configuration, we enter the for, but we do not extract anything from the
+            # configuration file (because nothing is there!)
+            if num_replicas == 0:
+                num_replicas = 1
+                replica_null = True
+            if num_policies == 0:
+                num_policies = 1
+                policy_null = True
+            if num_intervals == 0:
+                num_intervals = 1
+                interval_null = True
+            if num_minimum_switch == 0:
+                num_minimum_switch = 1
+                minimum_switch_null = True
+            if num_maximum_switch == 0:
+                num_maximum_switch = 1
+                maximum_switch_null = True
+            if num_sensing_control_period == 0:
+                num_sensing_control_period = 1
+                sensing_control_period_null = True
+            if num_sensing_control_time == 0:
+                num_sensing_control_time = 1
+                sensing_control_time_null = True
+
+            for traffic_information_index in range(num_traffic_information):
+                for frame_description_index in range(num_frame_descriptions):
+                    # If there is no configuration, we enter the for, but we do not extract anything from the
+                    # configuration file (because nothing is there!) This is special case, because is outside the
+                    # topology configuration
+                    if num_dependencies_configurations == 0:
+                        num_dependencies_configurations = 1
+                        dependency_configuration_null = True
+                    for dependencies_index in range(num_dependencies_configurations):
+                        for replica_index in range(num_replicas):
+                            for policy_index in range(num_policies):
+                                for interval_index in range(num_intervals):
+                                    for minimum_switch_index in range(num_minimum_switch):
+                                        for maximum_switch_index in range(num_maximum_switch):
+                                            for period_index in range(num_sensing_control_period):
+                                                for time_index in range(num_sensing_control_time):
+
+                                                    total_networks += 1
+
+                                                    # Create the configuration
+                                                    network_description, pre_col_dom, link_description = \
+                                                        self.get_network_topology_from_xml(name, topology_index)
+                                                    conf.set_topology_parameters(network_description, link_description)
+
+                                                    conf.set_collision_domains_parameter(pre_col_dom)
+
+                                                    num_frames, single, local, multiple, broadcast = \
+                                                        self.get_traffic_information_from_xml(name,
+                                                                                              traffic_information_index)
+                                                    conf.set_traffic_information_parameters(num_frames, single, local,
+                                                                                            multiple, broadcast)
+                                                    periods, per_periods, deadlines, sizes = \
+                                                        self.get_frames_description_from_xml(name,
+                                                                                             frame_description_index)
+                                                    conf.set_frames_description_parameters(periods, per_periods,
+                                                                                           deadlines, sizes)
+                                                    if not dependency_configuration_null:
+                                                        num_dependencies, min_depth, max_depth, min_children, \
+                                                            max_children, min_time_waiting, max_time_waiting, \
+                                                            min_time_deadline, max_time_deadline, waiting, deadline, \
+                                                            waiting_deadline = \
+                                                            self.get_dependencies_from_xml(name, dependencies_index)
+                                                        conf.set_dependency_parameters(num_dependencies, min_depth,
+                                                                                       max_depth, min_children,
+                                                                                       max_children, min_time_waiting,
+                                                                                       max_time_waiting,
+                                                                                       min_time_deadline,
+                                                                                       max_time_deadline, waiting,
+                                                                                       deadline, waiting_deadline)
+                                                    if not replica_null:
+                                                        list_replicas = \
+                                                            self.get_number_replicas_from_xml(name, topology_index,
+                                                                                              replica_index)
+                                                        conf.set_replicas_parameter(list_replicas)
+                                                    else:
+                                                        conf.set_replicas_parameter(None)
+
+                                                    if not policy_null:
+                                                        policy = self.get_replica_policy_from_xml(name, topology_index,
+                                                                                                  policy_index)
+                                                        conf.set_replica_policy_parameter(policy)
+                                                    else:
+                                                        conf.set_replica_policy_parameter(None)
+
+                                                    if not interval_null:
+                                                        interval = self.get_replica_interval_from_xml(name,
+                                                                                                      topology_index,
+                                                                                                      interval_index)
+                                                        conf.set_replica_interval_parameter(interval)
+                                                    else:
+                                                        conf.set_replica_interval_parameter(None)
+
+                                                    if not minimum_switch_null:
+                                                        minimum_switch = \
+                                                            self.get_minimum_time_switch_from_xml(name, topology_index,
+                                                                                                  minimum_switch_index)
+                                                        conf.set_minimum_switch_parameter(minimum_switch)
+                                                    else:
+                                                        conf.set_minimum_switch_parameter(None)
+
+                                                    if not maximum_switch_null:
+                                                        maximum_switch = \
+                                                            self.get_maximum_time_switch_from_xml(name, topology_index,
+                                                                                                  maximum_switch_index)
+                                                        conf.set_maximum_switch_parameter(maximum_switch)
+                                                    else:
+                                                        conf.set_maximum_switch_parameter(None)
+
+                                                    if not sensing_control_period_null:
+                                                        sensing_control_period = \
+                                                            self.get_sensing_control_period_from_xml(name,
+                                                                                                     topology_index,
+                                                                                                     period_index)
+                                                        conf.set_sensing_control_period_parameter(
+                                                            sensing_control_period)
+                                                    else:
+                                                        conf.set_sensing_control_period_parameter(None)
+
+                                                    if not sensing_control_time_null:
+                                                        sensing_control_time = \
+                                                            self.get_sensing_control_time_from_xml(name, topology_index,
+                                                                                                   time_index)
+                                                        conf.set_sensing_control_time_parameter(
+                                                            sensing_control_time)
+                                                    else:
+                                                        conf.set_sensing_control_time_parameter(None)
+
+                                                    # Skip the configuration if is not valid
+                                                    if conf.is_it_valid():
+                                                        # Formalize the configuration to spot identical later on
+                                                        conf.formalize_configuration()
+
+                                                        # Add the configuration if there is no same configuration
+                                                        if conf not in list_unique_conf:
+                                                            list_unique_conf.append(deepcopy(conf))
+
+        logging.debug("Number of total networks => %d", total_networks)
+        logging.debug("Number of unique networks = > %d", len(list_unique_conf))
+
+        # For all configurations, create the network and its traffic
+        for configuration in list_unique_conf:
+            self.create_topology(configuration.network, configuration.preprocessed_collision_domains,
+                                 configuration.link)
+            self.generate_paths()
+            self.generate_frames(configuration.num_frames, configuration.broad, configuration.single,
+                                 configuration.local, configuration.multi)
+            self.add_frame_params(configuration.periods, configuration.per_periods, configuration.deadlines,
+                                  configuration.sizes)
+            if configuration.num_dependencies is not None:
+                self.generate_dependencies(configuration.num_dependencies, configuration.min_depth,
+                                           configuration.max_depth, configuration.min_children,
+                                           configuration.max_children, configuration.min_time_waiting,
+                                           configuration.max_time_waiting, configuration.min_time_deadline,
+                                           configuration.max_time_deadline, configuration.waiting,
+                                           configuration.deadline, configuration.waiting_deadline)
+
+            hyper_period = self.calculate_hyper_period(configuration.periods)
+            utilization, schedulable = self.calculate_utilization(hyper_period, configuration.replicas,
+                                                                  configuration.sensing_control_period,
+                                                                  configuration.sensing_control_time)
+
+            # If schedulable then, create the network
+            if schedulable:
+                schedulable_networks += 1
+
+        logging.debug(logging.debug("Number of schedulable networks = > %d", schedulable_networks))

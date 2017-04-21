@@ -1,7 +1,7 @@
 from NetworkGenerator.Network import *
 
 network = Network()
-
+"""
 description, links = network.get_network_topology_from_xml('Configuration.xml', 0)
 
 print(description)
@@ -56,3 +56,6 @@ print(sensing_control_period)
 sensing_control_time = network.get_sensing_control_time_from_xml('Configuration.xml', 0, 0)
 
 print(sensing_control_time)
+"""
+
+network.create_networks_from_xml('Configuration.xml')
