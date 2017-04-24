@@ -20,12 +20,14 @@ from NetworkGenerator.Link import *
 from random import random, choice, shuffle, randint
 from copy import deepcopy
 from functools import reduce
+from xml.dom import minidom
 import xml.etree.ElementTree as Xml
 import networkx as nx
 import logging
 import copy
 import os
 import shutil
+import hashlib
 
 
 # Auxiliary functions
@@ -1400,6 +1402,151 @@ class Network:
 
     # Output function definitions #
 
+    def __generate_network_description_xml(self, top):
+        """
+        Generates the network description, including the nodes, links and collision domains information
+        :param top: top of the xml tree where to add the network description
+        :return: 
+        """
+        # Create the node to attach all the network description
+        network_description_xml = Xml.SubElement(top, 'NetworkDescription')
+
+        # For all nodes, attach its information
+        nodes_xml = Xml.SubElement(network_description_xml, 'Nodes')
+        for index, node in self.__graph.nodes_iter(data=True):
+            node_type = ''
+            if node['type'].get_type() == NodeType.end_system:     # Check the type of the node (End system or Switch)
+                node_type = 'End System'
+            elif node['type'].get_type() == NodeType.switch:
+                node_type = 'Switch'
+            node_xml = Xml.SubElement(nodes_xml, 'Node')
+            node_xml.set('category', node_type)         # Set the category to either End System or Wireless
+
+            # Add the information of the node
+            Xml.SubElement(node_xml, 'ID').text = str(index)
+
+            # Add the links connected to that node
+            connections_xml = Xml.SubElement(node_xml, 'Connections')
+            for link in self.__links:
+                if link[0] == index or link[1] == index:    # If the link is connected to the node, add its ID
+                    Xml.SubElement(connections_xml, 'Link').text = str(self.__links.index(link))
+
+        # For all links, attach its information
+        links_xml = Xml.SubElement(network_description_xml, 'Links')
+        for index, link in enumerate(self.__links_object_container):
+            link_type = ''
+            if link.get_type() == LinkType.wireless:        # Check if the link type is wired or wireless
+                link_type = 'Wireless'
+            elif link.get_type() == LinkType.wired:
+                link_type = 'Wired'
+            link_xml = Xml.SubElement(links_xml, 'Link')
+            link_xml.set('category', link_type)
+            Xml.SubElement(link_xml, 'ID').text = str(index)
+            Xml.SubElement(link_xml, 'Speed').text = str(link.get_speed())
+            Xml.SubElement(link_xml, 'Source').text = str(self.__links[index][0])
+            Xml.SubElement(link_xml, 'Destination').text = str(self.__links[index][1])
+
+        # For all the collision domains, attach its information
+        collision_domains_xml = Xml.SubElement(network_description_xml, 'CollisionDomains')
+        for collision_domain in self.__collision_domains:
+            collision_domain_xml = Xml.SubElement(collision_domains_xml, 'CollisionDomain')
+            for link in collision_domain:                   # For all links in the collision domain, add it
+                Xml.SubElement(collision_domain_xml, 'Link').text = str(link)
+
+    def __generate_frames_xml(self, top):
+        """
+        Generate the output XML for the frames
+        :param top: top element where to add the frames
+        :return: 
+        """
+        # For all frames, attach the frame information
+        frames_xml = Xml.SubElement(top, 'Frames')
+        for index, frame in enumerate(self.__frames):
+            frame_xml = Xml.SubElement(frames_xml, 'Frame')
+            Xml.SubElement(frame_xml, 'ID').text = str(index)
+            Xml.SubElement(frame_xml, 'Period').text = str(frame.get_period())
+            Xml.SubElement(frame_xml, 'Deadline').text = str(frame.get_deadline())
+            Xml.SubElement(frame_xml, 'Size').text = str(frame.get_size())
+
+            # Write all paths
+            paths_xml = Xml.SubElement(frame_xml, 'Paths')
+            paths = []                  # List to save the paths, necessary to calculate the splits
+            for receiver in frame.get_receivers():      # Every path is from the sender to one of the frame receivers
+                path_str = ''
+                paths.append([])        # Init the current path
+                for link in self.__paths[frame.get_sender()][receiver]:     # For all links in the path
+                    path_str += str(link) + ';'
+                    paths[-1].append(link)              # Save the link to calculate the split later on
+                Xml.SubElement(paths_xml, 'Path').text = path_str           # Save the path once finished
+
+            # Write all splits
+            splits_xml = Xml.SubElement(frame_xml, 'Splits')
+            splits = self.__calculate_splits(paths)     # Calculate the paths for the given splits
+            if len(splits) > 0:                         # If there are any splits
+                for split in splits:                    # For all splits
+                    split_str = ''
+                    for link in split:                  # For all links in the split, do the same that in paths
+                        split_str += str(link) + ';'
+                    Xml.SubElement(splits_xml, 'Split').text = split_str
+
+    def __generate_dependencies_xml(self, top):
+        """
+        Generate the output XML for the dependencies
+        :param top: node where to add the dependencies
+        :return: 
+        """
+        # For all dependencies, add them
+        dependencies_xml = Xml.SubElement(top, 'Dependencies')
+        for index, dependency in enumerate(self.__dependencies):
+            dependency_xml = Xml.SubElement(dependencies_xml, 'Dependency')
+            Xml.SubElement(dependency_xml, 'ID').text = str(index)
+            Xml.SubElement(dependency_xml, 'PredecessorFrame').text = str(dependency.get_predecessor_frame())
+            Xml.SubElement(dependency_xml, 'PredecessorLink').text = str(dependency.get_predecessor_link())
+            Xml.SubElement(dependency_xml, 'SuccessorFrame').text = str(dependency.get_successor_frame())
+            Xml.SubElement(dependency_xml, 'SuccessorLink').text = str(dependency.get_successor_link())
+            Xml.SubElement(dependency_xml, 'WaitingTime').text = str(dependency.get_waiting_time())
+            Xml.SubElement(dependency_xml, 'DeadlineTime').text = str(dependency.get_deadline_time())
+
+    def __generate_xml_output(self, name, configuration):
+        """
+        Generates the XML output file with the information of the network to schedule
+        :param name: hash name of the network, including the folder relative direction
+        :param configuration: configuration parameters needed for the general information
+        :return: 
+        """
+        # Create top of the xml file
+        network_input_xml = Xml.Element('Network')
+
+        # Write the General Information of the network
+        general_information_xml = Xml.SubElement(network_input_xml, 'GeneralInformation')
+        Xml.SubElement(general_information_xml, 'NumberFrames').text = str(len(self.__frames))
+        Xml.SubElement(general_information_xml, 'NumberDependencies').text = str(self.__num_dependencies)
+        Xml.SubElement(general_information_xml, 'NumberSwitches').text = str(len(self.__switches))
+        Xml.SubElement(general_information_xml, 'NumberEndSystems').text = str(len(self.__end_systems))
+        Xml.SubElement(general_information_xml, 'NumberLinks').text = str(len(self.__links))
+        Xml.SubElement(general_information_xml, 'NumberCollisionDomains').text = str(len(self.__collision_domains))
+        Xml.SubElement(general_information_xml, 'SensingControlPeriod').text = str(configuration.sensing_control_period)
+        Xml.SubElement(general_information_xml, 'SensingControlTime').text = str(configuration.sensing_control_time)
+        Xml.SubElement(general_information_xml, 'ReplicaPolicy').text = configuration.replica_policy
+        Xml.SubElement(general_information_xml, 'ReplicaInterval').text = str(configuration.replica_interval)
+        replica_str = ''
+        for replica in configuration.replicas:
+            replica_str += str(replica) + ';'
+        Xml.SubElement(general_information_xml, 'Replicas').text = replica_str
+
+        # Write the Network Description
+        self.__generate_network_description_xml(network_input_xml)
+
+        # Write the Traffic Information
+        traffic_information_xml = Xml.SubElement(network_input_xml, 'TrafficInformation')
+        self.__generate_frames_xml(traffic_information_xml)
+        self.__generate_dependencies_xml(traffic_information_xml)
+
+        # Write the final file
+        output_xml = minidom.parseString(Xml.tostring(network_input_xml)).toprettyxml(indent="   ")
+        with open(name, "w") as f:
+            f.write(output_xml)
+
     def create_networks_from_xml(self, name):
         """
         Create all the networks possible from the configuration xml file. They are nested under a folder "network" and
@@ -1629,5 +1776,35 @@ class Network:
             # If schedulable then, create the network
             if schedulable:
                 schedulable_networks += 1
+
+                # Generate hashing
+                hash_string = "net-" + configuration.network + "&col_dom-"
+                hash_string += str(configuration.preprocessed_collision_domains) + "&link-" + configuration.link
+                hash_string += "&frame-" + str(configuration.num_frames) + "&per-" + str(configuration.broad) + ","
+                hash_string += str(configuration.single) + "," + str(configuration.local) + ","
+                hash_string += str(configuration.multi) + "&periods-" + str(configuration.periods)
+                hash_string += "&per_periods-" + str(configuration.per_periods) + "&deadlines-"
+                hash_string += str(configuration.deadlines) + "&sizes-" + str(configuration.sizes) + "&num_dep-"
+                hash_string += str(configuration.num_dependencies) + "&min_depth-" + str(configuration.min_depth)
+                hash_string += "&max_depth-" + str(configuration.max_depth) + "&min_children-"
+                hash_string += str(configuration.min_children) + "&max_children-" + str(configuration.max_children)
+                hash_string += "&min_time_waiting-" + str(configuration.min_time_waiting) + "&max_time_waiting-"
+                hash_string += str(configuration.max_time_waiting) + "&min_time_deadline-"
+                hash_string += str(configuration.min_time_deadline) + "&max_time_deadline-"
+                hash_string += str(configuration.max_time_deadline) + "&waiting-" + str(configuration.waiting)
+                hash_string += "&deadline-" + str(configuration.deadline) + "&waiting_deadline-"
+                hash_string += str(configuration.waiting_deadline) + "&replica_policy-"
+                hash_string += str(configuration.replica_policy) + "&replica_interval-"
+                hash_string += str(configuration.replica_interval) + "&replicas-" + str(configuration.replicas)
+                hash_string += "&sensing_control_period-" + str(configuration.sensing_control_period)
+                hash_string += "&sensing_control_time-" + str(configuration.sensing_control_time)
+                print(hash_string)
+                hash_num = hashlib.md5(hash_string.encode())
+                print(hash_num.hexdigest())
+
+                os.makedirs("networks/" + str(hash_num.hexdigest()))
+                os.makedirs("networks/" + str(hash_num.hexdigest()) + "/schedules")
+                name_network = "networks/" + str(hash_num.hexdigest()) + "/" + str(hash_num.hexdigest())
+                self.__generate_xml_output(name_network, configuration)
 
         logging.debug(logging.debug("Number of schedulable networks = > %d", schedulable_networks))
