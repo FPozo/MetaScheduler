@@ -2,7 +2,7 @@
 
 """* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                                                                                                     *
- *  DENetwork Package                                                                                                  *
+ *  MetaScheduler Package                                                                                              *
  *  Network Generator                                                                                                  *
  *                                                                                                                     *
  *  Created by Francisco Pozo on 17/04/17.                                                                             *
