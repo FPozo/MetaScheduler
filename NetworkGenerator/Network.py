@@ -86,6 +86,8 @@ class NetworkConfiguration:
     waiting = None
     deadline = None
     waiting_deadline = None
+    hyper_period = None
+    utilization = None
 
     def set_topology_parameters(self, network, link):
         """
@@ -1529,6 +1531,8 @@ class Network:
         Xml.SubElement(general_information_xml, 'SensingControlTime').text = str(configuration.sensing_control_time)
         Xml.SubElement(general_information_xml, 'ReplicaPolicy').text = configuration.replica_policy
         Xml.SubElement(general_information_xml, 'ReplicaInterval').text = str(configuration.replica_interval)
+        Xml.SubElement(general_information_xml, 'HyperPeriod').text = str(configuration.hyper_period)
+        Xml.SubElement(general_information_xml, 'Utilization').text = str(configuration.utilization)
         replica_str = ''
         for replica in configuration.replicas:
             replica_str += str(replica) + ';'
@@ -1772,6 +1776,9 @@ class Network:
             utilization, schedulable = self.calculate_utilization(hyper_period, configuration.replicas,
                                                                   configuration.sensing_control_period,
                                                                   configuration.sensing_control_time)
+
+            configuration.hyper_period = hyper_period
+            configuration.utilization = utilization
 
             # If schedulable then, create the network
             if schedulable:
