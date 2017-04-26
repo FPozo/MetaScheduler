@@ -1,6 +1,7 @@
-from NetworkGenerator.Network import *
+from NetworkGenerator.Network import Network as nx
+from Scheduler.Network import *
 
-network = Network()
+
 """
 description, links = network.get_network_topology_from_xml('Configuration.xml', 0)
 
@@ -57,5 +58,10 @@ sensing_control_time = network.get_sensing_control_time_from_xml('Configuration.
 
 print(sensing_control_time)
 """
+#network = nx()
 
-network.create_networks_from_xml('Configuration.xml')
+#network.create_networks_from_xml('Configuration.xml')
+
+scheduler = Network()
+
+scheduler.parse_network_xml('networks/b0377c22992e9cd7b05f290821ada430/b0377c22992e9cd7b05f290821ada430')

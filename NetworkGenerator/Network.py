@@ -1479,7 +1479,7 @@ class Network:
                 for link in self.__paths[frame.get_sender()][receiver]:     # For all links in the path
                     path_str += str(link) + ';'
                     paths[-1].append(link)              # Save the link to calculate the split later on
-                Xml.SubElement(paths_xml, 'Path').text = path_str           # Save the path once finished
+                Xml.SubElement(paths_xml, 'Path').text = path_str[:-1]      # Save the path once finished
 
             # Write all splits
             splits_xml = Xml.SubElement(frame_xml, 'Splits')
@@ -1489,7 +1489,7 @@ class Network:
                     split_str = ''
                     for link in split:                  # For all links in the split, do the same that in paths
                         split_str += str(link) + ';'
-                    Xml.SubElement(splits_xml, 'Split').text = split_str
+                    Xml.SubElement(splits_xml, 'Split').text = split_str[:-1]
 
     def __generate_dependencies_xml(self, top):
         """
@@ -1536,7 +1536,7 @@ class Network:
         replica_str = ''
         for replica in configuration.replicas:
             replica_str += str(replica) + ';'
-        Xml.SubElement(general_information_xml, 'Replicas').text = replica_str
+        Xml.SubElement(general_information_xml, 'Replicas').text = replica_str[:-1]
 
         # Write the Network Description
         self.__generate_network_description_xml(network_input_xml)
