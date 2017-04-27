@@ -14,6 +14,7 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * """
 
 from itertools import chain
+from z3 import *
 
 
 class TreePath:
@@ -77,12 +78,13 @@ class TreePath:
         :param transmission_time: transmission time of the frame through the link
         :return: 
         """
-        self.__transmission_time = transmission_time
+        self.__transmission_time = int(transmission_time)
 
     def get_parent(self):
         """
         Get the parent path of the current path
         :return: parent path
+        :rtype: TreePath
         """
         return self.__parent
 
@@ -146,9 +148,14 @@ class TreePath:
         :param index_instance: instance index
         :param index_replica: replica index
         :param time: transmission time
+        :type time: int, IntNumRef
         :return: 
         """
-        self.__offset[index_instance][index_replica] = time
+        # If the time is a IntNumRef, convert it to normal time
+        if isinstance(time, IntNumRef):
+            self.__offset[index_instance][index_replica] = time.as_long()
+        else:
+            self.__offset[index_instance][index_replica] = time
 
     def get_z3_offset(self, index_instance, index_replica):
         """
@@ -156,8 +163,34 @@ class TreePath:
         :param index_instance: instance index 
         :param index_replica: replica index
         :return: the Z3 variable
+        :rtype: ArithRef
         """
         return self.__z3_offset[index_instance][index_replica]
+
+    def get_offset(self, index_instance, index_replica):
+        """
+        Get the offset for the instance and replica given
+        :param index_instance: index of the instance
+        :param index_replica: index of the replica
+        :type index_replica: int
+        :type index_instance: int
+        :return: offset
+        :rtype: int
+        """
+        return self.__offset[index_instance][index_replica]
+
+    def init_z3_offset(self, name):
+        """
+        Set all the z3 offsets in the matrix
+        :param name: the start of the name o_frame_link, it needs _instance_replica
+        :type name: str
+        :return: 
+        """
+        # For all values in the z3 matrix, complete the final name and init the z3 variable as integer
+        for row_index, row in enumerate(self.__z3_offset):
+            for column_index, _ in enumerate(row):
+                final_name = name + '_' + str(row_index) + '_' + str(column_index)
+                self.__z3_offset[row_index][column_index] = Int(final_name)
 
     def add_new_path(self, path):
         """
@@ -166,23 +199,39 @@ class TreePath:
         :param path: list of index links in the path
         :return: 
         """
-        if self.__link_id is None:                          # If the link id is None, this link has not appear
-            self.__link_id = path[0]                        # We create it adding the link id
-            path = path[1:]                                 # Advance the path
-            if path:                                        # If there are more links in the path
-                self.__children.append(TreePath())          # Add it as new children
-                self.__children[-1].set_parent(self)        # Set the actual path as parent of the child
-                self.__children[-1].add_new_path(path)      # Continue the recursion
-        elif len(path) > 1:                                 # If the path is larger than 1 (if 1, we finished!)
+        if self.__link_id is None:  # If the link id is None, this link has not appear
+            self.__link_id = path[0]  # We create it adding the link id
+            path = path[1:]  # Advance the path
+            if path:  # If there are more links in the path
+                self.__children.append(TreePath())  # Add it as new children
+                self.__children[-1].set_parent(self)  # Set the actual path as parent of the child
+                self.__children[-1].add_new_path(path)  # Continue the recursion
+        elif len(path) > 1:  # If the path is larger than 1 (if 1, we finished!)
             child_found = False
-            for child in self.__children:                   # Search if any children has the next link in the path
-                if child.get_link_id() == path[1]:          # If it has, continue the recursion with the child path
+            for child in self.__children:  # Search if any children has the next link in the path
+                if child.get_link_id() == path[1]:  # If it has, continue the recursion with the child path
                     child.add_new_path(path[1:])
                     child_found = True
                     break
-            if not child_found:                             # If the link is not in a child create it
+            if not child_found:  # If the link is not in a child create it
                 self.__children.append(TreePath())
                 self.__children[-1].add_new_path(path[1:])  # Call recursion, it will create add the information
+
+    def get_num_replicas(self):
+        """
+        Get the number of replicas of the path
+        :return: number of replicas
+        _:rtype: int
+        """
+        return len(self.__z3_offset[0])
+
+    def get_num_instances(self):
+        """
+        Get the number of instances of the z3 offset matrix
+        :return: number of instances
+        _rtype: int
+        """
+        return len(self.__z3_offset)
 
 
 class Frame:
@@ -252,13 +301,21 @@ class Frame:
         """
         self.__size = size
 
+    def get_path(self):
+        """
+        Get the path root of the frame
+        :return: path root of the path tree
+        :rtype: TreePath
+        """
+        return self.__tree_path
+
     def add_path(self, path):
         """
         Add path to the Tree Path
         :param path: list of links in the path
         :return: 
         """
-        if self.__tree_path is None:            # If is the first path, initialize the root of the tree path
+        if self.__tree_path is None:  # If is the first path, initialize the root of the tree path
             self.__tree_path = TreePath()
         self.__tree_path.add_new_path(path)
 
@@ -279,9 +336,9 @@ class Frame:
         :param collision_domains: matrix with the links in every collision domain
         :return: 
         """
-        for path in self.__tree_path:       # For every path in the tree path, update the time and the offsets
-            path.set_transmission_time((self.__size * 1000)/ links[path.get_link_id()].get_speed())
-            num_instances = int(hyper_period / self.__period)        # Get the number of instances
+        for path in self.__tree_path:  # For every path in the tree path, update the time and the offsets
+            path.set_transmission_time((self.__size * 1000) / links[path.get_link_id()].get_speed())
+            num_instances = int(hyper_period / self.__period)  # Get the number of instances
 
             # Get the list of replicas if the link is in a collision domain + 1, 1 if not
             collision_domain = [index for index, row in enumerate(collision_domains) if path.get_link_id() in row]

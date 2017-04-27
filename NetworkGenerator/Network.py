@@ -852,6 +852,7 @@ class Network:
             if link_utilization[index] > 1.0:       # Check if is possible to schedule all of its links
                 possible = False
             utilization += link_utilization[index]
+            print(link_utilization[index])
         return utilization / len(link_utilization), possible
 
     # Input and Output function definitions #

@@ -17,7 +17,7 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * """
 
 from Scheduler.Link import *
-from Scheduler.Frame import Frame
+from Scheduler.Frame import Frame, TreePath
 from Scheduler.Dependency import DependencyTree
 import xml.etree.ElementTree as Xml
 
@@ -38,6 +38,7 @@ class Network:
     __dependencies = None
     __sensing_control_period = None
     __sensing_control_time = None
+    __sensing_control = None
     __replica_policy = None
     __replica_interval = None
     __list_replicas = []
@@ -56,6 +57,7 @@ class Network:
         self.__dependencies = None
         self.__sensing_control_period = None
         self.__sensing_control_time = None
+        self.__sensing_control = None
         self.__replica_policy = None
         self.__replica_interval = None
         self.__list_replicas = []
@@ -73,6 +75,109 @@ class Network:
         """
         for frame in self.__frames:            # For all frames, init correctly its information
             frame.update_frame(links, hyper_period, list_replicas, collision_domains)
+
+    def get_number_frames(self):
+        """
+        Get the number of frames in the network
+        :return: number of frames in the network
+        """
+        return self.__num_frames
+
+    def get_hyper_period(self):
+        """
+        Get the hyper period of the network
+        :return: hyper period of the network
+        """
+        return self.__hyper_period
+
+    def get_utilization(self):
+        """
+        Get the utilization of the network
+        :return: utilization of the network
+        :rtype: float
+        """
+        return self.__utilization
+
+    def get_frame_paths(self, frame_index):
+        """
+        Get the path root of a given frame index
+        :param frame_index: frame index
+        :return: path root
+        :rtype: TreePath
+        """
+        return self.__frames[frame_index].get_path()
+
+    def get_frame_period(self, frame_index):
+        """
+        Get the period of a frame index
+        :param frame_index: frame index
+        :type frame_index: int
+        :return: the frame period
+        _:rtype: int
+        """
+        return self.__frames[frame_index].get_period()
+
+    def get_frame_deadline(self, frame_index):
+        """
+        Get the frame deadline
+        :param frame_index: frame index
+        :type frame_index: int
+        :return: frame deadline
+        :rtype: int
+        """
+        return self.__frames[frame_index].get_deadline()
+
+    def get_replica_policy(self):
+        """
+        Get the replica policy
+        :return: replica policy
+        :rtype: str
+        """
+        return self.__replica_policy
+
+    def get_replica_interval(self):
+        """
+        Get the replica interval
+        :return: replica interval
+        :rtype: int
+        """
+        return self.__replica_interval
+
+    def __create_sensing_control(self, period, time):
+        """
+        Creates a sensing and control block as a frame
+        :param period: period of the sensing and control
+        :param time: time of the sensing and control
+        :return: 
+        """
+        # Create the sensing and control block as a frame
+        self.__sensing_control = Frame()
+        self.__sensing_control.set_period(period)
+
+        # For the paths, it will be a unique path that contains all wireless links of the network
+        path = [index for index, link in enumerate(self.__links) if link.get_type() == LinkType.wireless]
+        self.__sensing_control.add_path(path)
+
+        # For every path, add the time of the sensing and control
+        for path in self.__sensing_control.get_path():
+            path.set_transmission_time(time)
+            path.init_offset(int(self.__hyper_period / period), 1)
+
+    def get_sensing_control_path(self):
+        """
+        Get the sensing and control path
+        :return: sensing and control path
+        :rtype: list of TreePath
+        """
+        return self.__sensing_control.get_path()
+
+    def get_sensing_control_period(self):
+        """
+        Get the sensing and control period
+        :return: sensing and control period
+        :rtype: int
+        """
+        return self.__sensing_control_period
 
     # Input XML Functions
 
@@ -238,6 +343,9 @@ class Network:
         self.__get_collision_domains_xml(filename)
         self.__get_frames_information_xml(filename)
         self.__get_dependencies_information_xml(filename)
+
+        # Create the sensing and control blocks
+        self.__create_sensing_control(self.__sensing_control_period, self.__sensing_control_time)
 
         # Update the frame object to be prepared for allocate all the offsets
         self.update_frames(self.__links, self.__hyper_period, self.__list_replicas, self.__collision_domains)

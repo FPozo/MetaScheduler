@@ -1,6 +1,8 @@
 from NetworkGenerator.Network import Network as nx
 from Scheduler.Network import *
+from Scheduler.Scheduler import *
 
+from z3 import *
 
 """
 description, links = network.get_network_topology_from_xml('Configuration.xml', 0)
@@ -65,3 +67,7 @@ print(sensing_control_time)
 scheduler = Network()
 
 scheduler.parse_network_xml('networks/b0377c22992e9cd7b05f290821ada430/b0377c22992e9cd7b05f290821ada430')
+
+solver = Scheduler()
+
+solver.one_shot_scheduler('networks/b0377c22992e9cd7b05f290821ada430/b0377c22992e9cd7b05f290821ada430', 'Shit')
