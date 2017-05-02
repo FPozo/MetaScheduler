@@ -12,6 +12,7 @@
 
 from z3 import *
 from Scheduler.Network import Network
+from math import ceil
 
 
 class Z3Synthesizer:
@@ -85,7 +86,7 @@ class Z3Synthesizer:
                             self.__solver.add(offset2 == offset + value)
 
         # Init the sensing and control also if is the first call of this function
-        if starting_time == 0:
+        if starting_time == 0 and network.get_sensing_control_period():
             for path in network.get_sensing_control_path():
 
                 # Set the name of the z3 integer variable
@@ -98,6 +99,180 @@ class Z3Synthesizer:
                     offset = path.get_z3_offset(instance, 0)
                     self.__solver.add(offset == value)
                     path.set_offset(instance, 0, value)
+
+    def contention_free(self, network, frames, previous_frames, starting_time, ending_time):
+        """
+        Assures that all the new frames introduced do not collide with others
+        :param network: :param network: given network
+        :param frames: list of frames to create the z3 constraints
+        :param previous_frames: list of previous frames to avoid collision
+        :param starting_time: starting time to init the constraints
+        :param ending_time: ending time to init the constraints
+        :type network: Network
+        :type frames: list of FrameBlock
+        :type previous_frames: list of FrameBlock, None
+        :type starting_time: int
+        :type ending_time: int
+        :return: 
+        """
+        # For all given frames, go through all paths
+        for index, frame in enumerate(frames):
+            frame_index = frame.get_frame_index()
+            for path in network.get_frame_paths(frame_index):
+
+                # For all previous frames, go through all paths also
+                for previous_index in range(0, index):
+                    previous_frame_index = frames[previous_index].get_frame_index()
+                    for previous_path in network.get_frame_paths(previous_frame_index):
+
+                        # Check if they share the same link or collision domain
+                        link = path.get_link_id()
+                        previous_link = previous_path.get_link_id()
+                        collision_domain = network.link_in_collision_domain(link)
+                        previous_collision_domain = network.link_in_collision_domain(previous_link)
+                        if link == previous_link or \
+                                (collision_domain >= 0 and collision_domain == previous_collision_domain):
+
+                            # Assert the constraint for all possible instances in the given range
+                            min_instances = starting_time // network.get_frame_period(frame_index)
+                            max_instances = int(ceil(ending_time / network.get_frame_period(frame_index)))
+                            for instance in range(min_instances, max_instances):
+                                for replica in range(path.get_num_replicas()):
+                                    offset = path.get_z3_offset(instance, replica)
+
+                                    # Assert with all possible instances of the previous frames
+                                    prev_min_instances = starting_time // network.get_frame_period(previous_frame_index)
+                                    prev_max_instances = int(ceil(ending_time /
+                                                                  network.get_frame_period(previous_frame_index)))
+                                    for previous_instance in range(prev_min_instances, prev_max_instances):
+                                        for prev_replica in range(previous_path.get_num_replicas()):
+                                            prev_offset = previous_path.get_z3_offset(previous_instance, prev_replica)
+
+                                            self.__solver.add(Or(offset + path.get_transmission_time() < prev_offset,
+                                                                 offset >=
+                                                                 prev_offset + previous_path.get_transmission_time()))
+
+                # For the sensing and control, also avoid transmission in its blocks
+                for sensing_path in network.get_sensing_control_path():
+
+                    # Check if there are links that are wireless and needed to avoid sensing and control blocks
+                    link = path.get_link_id()
+                    sensing_control_link = sensing_path.get_link_id()
+                    if link == sensing_control_link:
+
+                        # Assert the constraint for all possible instances in the given range
+                        min_instances = starting_time // network.get_frame_period(frame_index)
+                        max_instances = int(ceil(ending_time / network.get_frame_period(frame_index)))
+                        for instance in range(min_instances, max_instances):
+                            for replica in range(path.get_num_replicas()):
+                                offset = path.get_z3_offset(instance, replica)
+
+                                # Assert with all possible instances of the sensing and control
+                                sensing_min_instances = starting_time // network.get_sensing_control_period()
+                                sensing_max_instances = int(ceil(ending_time) / network.get_sensing_control_period())
+                                for sensing_instance in range(sensing_min_instances, sensing_max_instances):
+                                    sensing_offset = sensing_path.get_z3_offset(sensing_instance, 0)
+
+                                    self.__solver.add(Or(offset + path.get_transmission_time() < sensing_offset,
+                                                         offset >=
+                                                         sensing_offset + sensing_path.get_transmission_time()))
+
+    def path_dependent(self, network, frames):
+        """
+        Assure that all the given frames follow their path correctly
+        :param network: given network
+        :param frames: list of frames to create the z3 constraints
+        :type network: Network
+        :type frames: list of FrameBlock
+        :return: 
+        """
+        for frame in frames:                                        # For all given frames
+            frame_index = frame.get_frame_index()
+            for path in network.get_frame_paths(frame_index):       # For all paths in the frame
+
+                # For all children of the path, create the path dependent constraint
+                offset_parent = path.get_z3_offset(0, 0)
+                for child_path in path.get_children():
+                    offset_child = child_path.get_z3_offset(0, 0)
+                    # Offset_child_path > Offset_parent_path + minimum_time_switch
+                    self.__solver.add(offset_child >= offset_parent + (network.get_minimum_time_switch()))
+
+    def switch_memory(self, network, frames):
+        """
+        Assure that all the given frames do not surpass the time in the switch
+        :param network: given network
+        :param frames: list of frames to create the z3 constraints
+        :type network: Network
+        :type frames: list of FrameBlock
+        :return: 
+        """
+        for frame in frames:                                        # For all given frames
+            frame_index = frame.get_frame_index()
+            for path in network.get_frame_paths(frame_index):       # For all paths in the frame
+
+                # For all children of the path, create the path dependent constraint
+                offset_parent = path.get_z3_offset(0, 0)
+                for child_path in path.get_children():
+                    offset_child = child_path.get_z3_offset(0, 0)
+                    # Offset_child_path > Offset_parent_path + minimum_time_switch
+                    self.__solver.add(offset_child < offset_parent + (network.get_maximum_time_switch()))
+
+    def simultaneous_dispatch(self, network, frames):
+        """
+        Assure that all the given frames are transmitted at the same time in their splits
+        :param network: given network
+        :param frames: list of frames to create the z3 constraints
+        :type network: Network
+        :type frames: list of FrameBlock
+        :return: 
+        """
+        for frame in frames:                                        # For all given frames
+            frame_index = frame.get_frame_index()
+
+            # For every split, get all the paths in it and assert all its transmissions as equal
+            for split in network.get_frame_splits(frame_index):
+
+                # Before anything, we check if any split has a link in the collision domain, as they do cannot follow
+                # simultaneous dispatch constraints
+                collision_domains = network.get_collision_domains()
+                impossible = [1 for collision_domain in collision_domains for link in split if link in collision_domain]
+
+                if not impossible:          # If any link in the split is in a collision domain, skip this iteration
+                    list_paths = network.get_frame_paths_in_split(frame_index, split)
+                    for index_path, path in enumerate(list_paths[:-1]):         # For all paths but the last one
+                        offset1 = list_paths[index_path].get_z3_offset(0, 0)
+                        offset2 = list_paths[index_path + 1].get_z3_offset(0, 0)
+                        # actual path = next_path (both in split) => all offsets in paths in split are the same
+                        self.__solver.add(offset1 == offset2)
+
+    def dependencies_constraints(self, network, frames):
+        """
+        Assures that all the given frames satisfy the dependencies constraints
+        :param network: given network
+        :param frames: list of frames to create the z3 constraints
+        :type network: Network
+        :type frames: list of FrameBlock
+        :return: 
+        """
+        for frame in frames:            # For all frames
+            dependency = frame.get_dependency_linker()
+            if dependency:              # If the frame has a dependency add it
+
+                # Get the z3 variables from the predecessor and the successor dependency
+                predecessor_dependency = dependency.get_parent()
+                if predecessor_dependency:  # If the dependency has a parent (if not is the top and nothing to do)
+                    predecessor_path = network.get_frame_path_from_link(predecessor_dependency.get_frame_index(),
+                                                                        predecessor_dependency.get_link_index())
+                    predecessor_offset = predecessor_path.get_z3_offset(0, 0)
+
+                    successor_path = network.get_frame_path_from_link(dependency.get_frame_index(),
+                                                                      dependency.get_link_index())
+                    successor_offset = successor_path.get_z3_offset(0, 0)
+
+                    if dependency.get_deadline() > 0:       # If there are deadline dependency
+                        self.__solver.add(successor_offset < (predecessor_offset + dependency.get_deadline()))
+                    if dependency.get_waiting() > 0:        # If there are waiting dependency
+                        self.__solver.add(successor_offset > (predecessor_offset + dependency.get_waiting()))
 
     def check_satisfiability(self):
         """

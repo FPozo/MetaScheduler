@@ -319,6 +319,14 @@ class Frame:
             self.__tree_path = TreePath()
         self.__tree_path.add_new_path(path)
 
+    def get_splits(self):
+        """
+        Get the matrix of splits
+        :return: matrix of slipts
+        :rtype: list of list of int
+        """
+        return self.__splits
+
     def add_split(self, split):
         """
         Add a split to the matrix of splits

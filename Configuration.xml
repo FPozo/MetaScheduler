@@ -10,7 +10,7 @@
                 <ReplicaInterArrivalTime unit="us">150</ReplicaInterArrivalTime>
                 <MinTimeSwitch unit="ns">100</MinTimeSwitch>
                 <MaxTimeSwitch unit="us">10</MaxTimeSwitch>
-                <SensingControlPeriod unit="us">5000</SensingControlPeriod>
+                <SensingControlPeriod unit="ms">100</SensingControlPeriod>
                 <SensingControlTime unit="us">100</SensingControlTime>
                 <SensingControlTime unit="us">0</SensingControlTime>
             </TopologyInformation>
@@ -81,10 +81,10 @@
                 <MaxDepth>3</MaxDepth>
                 <MinChildren>1</MinChildren>
                 <MaxChildren>3</MaxChildren>
-                <MinTimeWaiting unit="ms">100</MinTimeWaiting>
-                <MaxTimeWaiting unit="ms">300</MaxTimeWaiting>
-                <MinTimeDeadline unit="ms">2500</MinTimeDeadline>
-                <MaxTimeDeadline unit="ms">8000</MaxTimeDeadline>
+                <MinTimeWaiting unit="ms">10</MinTimeWaiting>
+                <MaxTimeWaiting unit="ms">30</MaxTimeWaiting>
+                <MinTimeDeadline unit="ms">50</MinTimeDeadline>
+                <MaxTimeDeadline unit="ms">100</MaxTimeDeadline>
                 <Waiting>0.3</Waiting>
                 <Deadline>0.5</Deadline>
                 <WaitingDeadline>0.2</WaitingDeadline>

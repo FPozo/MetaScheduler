@@ -852,7 +852,6 @@ class Network:
             if link_utilization[index] > 1.0:       # Check if is possible to schedule all of its links
                 possible = False
             utilization += link_utilization[index]
-            print(link_utilization[index])
         return utilization / len(link_utilization), possible
 
     # Input and Output function definitions #
@@ -1532,6 +1531,8 @@ class Network:
         Xml.SubElement(general_information_xml, 'SensingControlTime').text = str(configuration.sensing_control_time)
         Xml.SubElement(general_information_xml, 'ReplicaPolicy').text = configuration.replica_policy
         Xml.SubElement(general_information_xml, 'ReplicaInterval').text = str(configuration.replica_interval)
+        Xml.SubElement(general_information_xml, 'MinimumTimeSwitch').text = str(configuration.minimum_switch)
+        Xml.SubElement(general_information_xml, 'MaximumTimeSwitch').text = str(configuration.maximum_switch)
         Xml.SubElement(general_information_xml, 'HyperPeriod').text = str(configuration.hyper_period)
         Xml.SubElement(general_information_xml, 'Utilization').text = str(configuration.utilization)
         replica_str = ''
@@ -1545,7 +1546,8 @@ class Network:
         # Write the Traffic Information
         traffic_information_xml = Xml.SubElement(network_input_xml, 'TrafficInformation')
         self.__generate_frames_xml(traffic_information_xml)
-        self.__generate_dependencies_xml(traffic_information_xml)
+        if self.__num_dependencies > 0:
+            self.__generate_dependencies_xml(traffic_information_xml)
 
         # Write the final file
         output_xml = minidom.parseString(Xml.tostring(network_input_xml)).toprettyxml(indent="   ")

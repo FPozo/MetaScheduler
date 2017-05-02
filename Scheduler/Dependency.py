@@ -70,6 +70,64 @@ class DependencyNode:
                     return 1
         return 0
 
+    def get_dependency_by_predecessor_frame(self, frame_index):
+        """
+        Recursion that returns the dependency node by predecessor frame
+        :param frame_index: predecessor frame on the dependency
+        :type frame_index: int
+        :return: dependency node
+        :rtype: DependencyNode
+        """
+        # If the current dependency is the predecessor, we found it
+        if self.__frame_index == frame_index:
+            return self
+        else:  # If not, iterate over all the children of the dependency
+            for child in self.__children:
+                found = child.get_dependency_by_predecessor_frame(frame_index)
+                if found:       # If we found it, return 1 to go back
+                    return found
+        return None             # If not, None
+
+    def get_parent(self):
+        """
+        Get the parent of the Dependency
+        :return: dependency parent
+        :rtype: DependencyNode
+        """
+        return self.__parent
+
+    def get_deadline(self):
+        """
+        Get the dependency deadline
+        :return: dependency deadline
+        :rtype: int
+        """
+        return self.__deadline
+
+    def get_waiting(self):
+        """
+        Get the dependency waiting time
+        :return: dependency waiting
+        :rtype: int
+        """
+        return self.__waiting
+
+    def get_frame_index(self):
+        """
+        Get the dependency frame index
+        :return: dependency frame index
+        :rtype: int
+        """
+        return self.__frame_index
+
+    def get_link_index(self):
+        """
+        Get the dependency link index
+        :return: dependency link index
+        :rtype: int
+        """
+        return self.__link_index
+
 
 class DependencyTree:
 
@@ -103,3 +161,17 @@ class DependencyTree:
         # If we did not found anything or the list of trees is empty, add a new tree, and a child to it
         self.__list_trees.append(DependencyNode(predecessor_frame, predecessor_link, 0, 0))
         self.__list_trees[-1].add_new_children(successor_frame, successor_link, waiting, deadline)
+
+    def get_dependency_by_frame(self, frame_index):
+        """
+        Get a dependency node by the frame
+        :param frame_index: predecessor frame on the dependency
+        :type frame_index: int
+        :return: dependency node
+        :rtype: DependencyNode
+        """
+        for tree in self.__list_trees:          # Search in all dependency trees
+            found = tree.get_dependency_by_predecessor_frame(frame_index)
+            if found:
+                return found
+        return None

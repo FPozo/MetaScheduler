@@ -19,6 +19,7 @@
 
 from Scheduler.Z3Synthesizer import Z3Synthesizer
 from Scheduler.Network import Network
+from Scheduler.Dependency import DependencyNode
 from xml.dom import minidom
 import xml.etree.ElementTree as Xml
 import logging
@@ -33,12 +34,14 @@ class FrameBlock:
 
     __frame = None
     __absolute_deadline = None
+    __dependency_linker = None
 
     # Standard function definitions #
 
     def __init__(self, frame_index, absolute_deadline):
         self.__frame = frame_index
         self.__absolute_deadline = absolute_deadline
+        self.__dependency_linker = None
 
     def get_frame_index(self):
         """
@@ -46,6 +49,23 @@ class FrameBlock:
         :return: frame index
         """
         return self.__frame
+
+    def get_dependency_linker(self):
+        """
+        Get the dependency linker
+        :return: dependency linker
+        :rtype: DependencyNode
+        """
+        return self.__dependency_linker
+
+    def set_dependency_linker(self, dependency_node):
+        """
+        Set a link to the dependency tree object
+        :param dependency_node: dependency node
+        :type dependency_node: DependencyNode
+        :return: 
+        """
+        self.__dependency_linker = dependency_node
 
 
 class Scheduler:
@@ -79,14 +99,25 @@ class Scheduler:
         self.__network = Network()
         self.__network.parse_network_xml(input_name)
 
+        dependencies = self.__network.get_dependencies()       # Get the dependency trees to accelerate everything
         # Create the frame queue (without absolute deadline as is not needed in the one shot scheduler)
         for index in range(self.__network.get_number_frames()):
             self.__frame_queue.append(FrameBlock(index, None))
+            # If the frame has a dependency, link it
+            self.__frame_queue[-1].set_dependency_linker(dependencies.get_dependency_by_frame(index))
 
         # Init the solver and the constraints
         self.__SMT_solver = Z3Synthesizer()                 # Init the SMT solver Z3
         # Init the Z3 variables in the frames
         self.__SMT_solver.init_z3_variables(self.__network, self.__frame_queue, 0, self.__network.get_hyper_period())
+
+        # Add all the constraints
+        self.__SMT_solver.contention_free(self.__network, self.__frame_queue, None, 0,
+                                          self.__network.get_hyper_period())
+        self.__SMT_solver.path_dependent(self.__network, self.__frame_queue)
+        self.__SMT_solver.switch_memory(self.__network, self.__frame_queue)
+        self.__SMT_solver.simultaneous_dispatch(self.__network, self.__frame_queue)
+        self.__SMT_solver.dependencies_constraints(self.__network, self.__frame_queue)
 
         if self.__SMT_solver.check_satisfiability():
             logging.debug('Eureka')
@@ -152,28 +183,29 @@ class Scheduler:
                         ending_xml.set('unit', 'ns')
 
         # Write the sensing and control blocks
-        sensing_control_xml = Xml.SubElement(schedule_xml, 'SensingControl')
-        for path in self.__network.get_sensing_control_path():
-            path_xml = Xml.SubElement(sensing_control_xml, 'Link')
-            Xml.SubElement(path_xml, 'LinkID').text = str(path.get_link_id())
+        if self.__network.get_sensing_control_period():
+            sensing_control_xml = Xml.SubElement(schedule_xml, 'SensingControl')
+            for path in self.__network.get_sensing_control_path():
+                path_xml = Xml.SubElement(sensing_control_xml, 'Link')
+                Xml.SubElement(path_xml, 'LinkID').text = str(path.get_link_id())
 
-            for instance in range(path.get_num_instances()):
-                instance_xml = Xml.SubElement(path_xml, 'Instance')
+                for instance in range(path.get_num_instances()):
+                    instance_xml = Xml.SubElement(path_xml, 'Instance')
 
-                # Write which instance and replica is the actual transmission
-                Xml.SubElement(instance_xml, 'NumberInstance').text = str(instance)
+                    # Write which instance and replica is the actual transmission
+                    Xml.SubElement(instance_xml, 'NumberInstance').text = str(instance)
 
-                # Write the transmission time
-                value = path.get_offset(instance, 0)
-                transmission_xml = Xml.SubElement(instance_xml, 'TransmissionTime')
-                transmission_xml.text = str(value)
-                transmission_xml.set('unit', 'ns')
+                    # Write the transmission time
+                    value = path.get_offset(instance, 0)
+                    transmission_xml = Xml.SubElement(instance_xml, 'TransmissionTime')
+                    transmission_xml.text = str(value)
+                    transmission_xml.set('unit', 'ns')
 
-                # Write the ending time
-                value += int(path.get_transmission_time())
-                ending_xml = Xml.SubElement(instance_xml, 'EndingTime')
-                ending_xml.text = str(value)
-                ending_xml.set('unit', 'ns')
+                    # Write the ending time
+                    value += int(path.get_transmission_time())
+                    ending_xml = Xml.SubElement(instance_xml, 'EndingTime')
+                    ending_xml.text = str(value)
+                    ending_xml.set('unit', 'ns')
 
         # Write the final file
         output_xml = minidom.parseString(Xml.tostring(schedule_xml)).toprettyxml(indent="   ")

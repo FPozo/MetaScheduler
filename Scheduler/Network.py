@@ -42,6 +42,8 @@ class Network:
     __replica_policy = None
     __replica_interval = None
     __list_replicas = []
+    __minimum_time_switch = None
+    __maximum_time_switch = None
     __hyper_period = None
     __utilization = None
 
@@ -61,6 +63,8 @@ class Network:
         self.__replica_policy = None
         self.__replica_interval = None
         self.__list_replicas = []
+        self.__minimum_time_switch = None
+        self.__maximum_time_switch = None
         self.__hyper_period = None
         self.__utilization = None
 
@@ -107,6 +111,16 @@ class Network:
         """
         return self.__frames[frame_index].get_path()
 
+    def get_frame_splits(self, frame_index):
+        """
+        Get the frame splits matrix
+        :param frame_index: index of the frame
+        :type frame_index: int
+        :return: splits matrix
+        :rtype: list of list of int
+        """
+        return self.__frames[frame_index].get_splits()
+
     def get_frame_period(self, frame_index):
         """
         Get the period of a frame index
@@ -126,6 +140,38 @@ class Network:
         :rtype: int
         """
         return self.__frames[frame_index].get_deadline()
+
+    def get_frame_paths_in_split(self, frame_index, split):
+        """
+        Get the list of paths that are in the split
+        :param frame_index: index of the frame
+        :param split: list of links index in a split
+        :type frame_index: int
+        :type split: list of in
+        :return: list of paths in the split
+        :rtype: list of TreePath
+        """
+        list_paths = []
+        for path in self.get_frame_paths(frame_index):      # Go through all the paths of the frame
+            if path.get_link_id() in split:                 # If the path link is in the split list
+                list_paths.append(path)
+                if len(list_paths) == len(split):           # If we found all paths, we finished
+                    return list_paths
+        return ValueError                                   # If we get here, we had an error
+
+    def get_frame_path_from_link(self, frame_index, link):
+        """
+        Get the frame path for a given link
+        :param frame_index: frame index
+        :param link: link index in the path
+        :type frame_index: int
+        :type link: int
+        :return: path
+        :rtype: TreePath
+        """
+        for path in self.__frames[frame_index].get_path():      # For the paths in the frame
+            if path.get_link_id() == link:                      # If the path link is the one we are searching, return
+                return path
 
     def get_replica_policy(self):
         """
@@ -179,6 +225,51 @@ class Network:
         """
         return self.__sensing_control_period
 
+    def get_minimum_time_switch(self):
+        """
+        Get the minimum time a frame has to stay in the switch
+        :return: minimum time switch
+        :rtype: int
+        """
+        return self.__minimum_time_switch
+
+    def get_maximum_time_switch(self):
+        """
+        Get the maximum time a frame can stay in the switch
+        :return: maximum time switch
+        :rtype: int
+        """
+        return self.__maximum_time_switch
+
+    def get_collision_domains(self):
+        """
+        Get the matrix of collision domains
+        :return: collision domain matrix
+        :rtype: list of list of int
+        """
+        return self.__collision_domains
+
+    def link_in_collision_domain(self, link_index):
+        """
+        Search the link in the collision domain, if exists, return which collision domain, if not return None
+        :param link_index: index of the link
+        :type link_index: int
+        :return: index of the collision domain if link is inside, None otherwise
+        :rtype: int, None
+        """
+        for index, collision_domain in enumerate(self.__collision_domains):
+            if link_index in collision_domain:
+                return index
+        return -1
+
+    def get_dependencies(self):
+        """
+        Get the list of dependencies
+        :return: list of dependencies
+        :rtype: DependencyTree
+        """
+        return self.__dependencies
+
     # Input XML Functions
 
     def __get_network_information_xml(self, filename):
@@ -216,6 +307,8 @@ class Network:
             self.__list_replicas = [int(x) for x in general_information_xml.find('Replicas').text.split(';')]
         except ValueError:
             pass
+        self.__minimum_time_switch = int(general_information_xml.find('MinimumTimeSwitch').text)
+        self.__maximum_time_switch = int(general_information_xml.find('MaximumTimeSwitch').text)
         self.__hyper_period = int(general_information_xml.find('HyperPeriod').text)
         self.__utilization = float(general_information_xml.find('Utilization').text)
 
@@ -344,8 +437,9 @@ class Network:
         self.__get_frames_information_xml(filename)
         self.__get_dependencies_information_xml(filename)
 
-        # Create the sensing and control blocks
-        self.__create_sensing_control(self.__sensing_control_period, self.__sensing_control_time)
+        # Create the sensing and control blocks if they exist
+        if self.__sensing_control_period:
+            self.__create_sensing_control(self.__sensing_control_period, self.__sensing_control_time)
 
         # Update the frame object to be prepared for allocate all the offsets
         self.update_frames(self.__links, self.__hyper_period, self.__list_replicas, self.__collision_domains)
