@@ -20,6 +20,7 @@ from Scheduler.Link import *
 from Scheduler.Frame import Frame, TreePath
 from Scheduler.Dependency import DependencyTree
 import xml.etree.ElementTree as Xml
+import logging
 
 
 class Network:
@@ -50,6 +51,7 @@ class Network:
     # Standard function definitions #
 
     def __init__(self):
+        logging.basicConfig(level=logging.DEBUG)
         self.__num_frames = None
         self.__frames = []
         self.__num_links = None
@@ -443,3 +445,116 @@ class Network:
 
         # Update the frame object to be prepared for allocate all the offsets
         self.update_frames(self.__links, self.__hyper_period, self.__list_replicas, self.__collision_domains)
+
+    # Checker functions
+
+    def check_schedule(self):
+        """
+        Check if all the constraints in the schedule are satisfied
+        :return: True if satisfied, False if not
+        """
+        for frame_index, frame in enumerate(self.__frames):     # For all frames
+            for path in frame.get_path():                   # For all paths of the frame
+                for instance in range(path.get_num_instances()):  # For all instances and replicas
+                    for replica in range(path.get_num_replicas()):
+
+                        offset = path.get_offset(instance, replica)
+                        # Check all other frames to see if there are collisions
+                        for other_frame_index, other_frame in enumerate(self.__frames):
+                            if frame_index != other_frame_index:
+                                for other_path in other_frame.get_path():
+                                    collision_domain = self.link_in_collision_domain(path.get_link_id())
+                                    previous_collision_domain = self.link_in_collision_domain(other_path.get_link_id())
+                                    if path.get_link_id() == other_path.get_link_id() or \
+                                            (collision_domain >= 0 and collision_domain == previous_collision_domain):
+                                        for other_instance in range(other_path.get_num_instances()):
+                                            for other_replica in range(other_path.get_num_replicas()):
+                                                other_offset = other_path.get_offset(other_instance, other_replica)
+                                                if (offset < other_offset + other_path.get_transmission_time()) and \
+                                                        (offset + path.get_transmission_time() > other_offset):
+                                                    logging.debug('Checked error in contention free')
+                                                    return False
+
+                        # Check if frames are being send in sensing and control blocks
+                        if self.__sensing_control_period:                           # If there is sensing and control
+                            if self.link_in_collision_domain(path.get_link_id()) >= 0:   # If the link is wireless
+                                for sensing_path in self.__sensing_control.get_path():
+                                    for sensing_instance in range(sensing_path.get_num_instances()):
+                                        other_offset = sensing_path.get_offset(sensing_instance, 0)
+                                        if (offset < other_offset + sensing_path.get_transmission_time()) and \
+                                                (offset + path.get_transmission_time() > other_offset):
+                                            logging.debug('Checked error in contention free for sensing and control')
+                                            return False
+
+                        offset = path.get_offset(instance, replica)
+                        # Check if the frame offsets satisfy its period
+                        if offset > (frame.get_period() * (instance + 1)):
+                            logging.debug('Checked error in frame period')
+                            return False
+
+                        # Check if the frame offsets satisfy its deadlines
+                        if offset > ((frame.get_period() * instance) + frame.get_deadline()):
+                            logging.debug('Checked error in frame deadline')
+                            return False
+
+                        # Check if replicas are working properly
+                        if replica > 0:
+                            distance = offset - path.get_offset(instance, replica - 1)
+                            # If the distance is not the interval distance
+                            if self.__replica_policy == 'Spread':
+                                if distance != self.__replica_interval:
+                                    logging.debug('Checked error in replica interval')
+                                    return False
+                            elif self.__replica_policy == 'Continuous':
+                                if distance != path.get_transmission_time():
+                                    logging.debug('Checked error in replica interval')
+                                    return False
+
+                        # Check if instances are ok
+                        if instance > 0:
+                            distance = offset - path.get_offset(instance - 1, replica)
+                            if distance != frame.get_period():
+                                logging.debug('Checked error in instance interval')
+                                return False
+
+                        # For all children paths of the current path
+                        for index_child, child_path in enumerate(path.get_children()):
+
+                            try:
+                                # Check if the distance is between min and max
+                                distance = child_path.get_offset(instance, replica) - path.get_offset(instance, replica)
+                                if distance < self.__minimum_time_switch or distance > self.__maximum_time_switch:
+                                    logging.debug('Checked error in time in switch for frame')
+                                    return False
+
+                                # Check if simultaneous dispatch is working
+                                if index_child > 0:
+                                    # Remember: If there are replicas, the simultaneous dispatch does not apply!
+                                    if path.get_child(index_child - 1).get_offset(instance, replica) != \
+                                            path.get_child(index_child).get_offset(instance, replica) and \
+                                            path.get_num_replicas() == 0:
+                                        logging.debug('Checked error in simultaneous dispatch')
+                                        return False
+
+                            except IndexError:              # Exception in cases one path has replicas and other not
+                                pass
+
+            # Check if dependencies hold
+            if self.__num_dependencies > 0:
+                dependency = self.__dependencies.get_dependency_by_frame(frame_index)
+                if dependency:                              # If there is dependency
+                    if dependency.get_parent():             # And is not the parent dependency of the tree
+                        link = dependency.get_link_index()  # Get the offsets of the frame and its parent dependency
+                        path = frame.get_path().get_path_by_link(link)
+                        parent_link = dependency.get_parent().get_link_index()
+                        parent_frame = self.__frames[dependency.get_parent().get_frame_index()]
+                        parent_path = parent_frame.get_path().get_path_by_link(parent_link)
+
+                        # Get the distance between both frames on the dependency and check if it holds
+                        distance = path.get_offset(0, 0) - parent_path.get_offset(0, 0)
+                        if (distance < dependency.get_waiting()) or \
+                                (dependency.get_deadline() != 0 and distance > dependency.get_deadline()):
+                            logging.debug('Checked error in dependency')
+                            return False
+
+        return True

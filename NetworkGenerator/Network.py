@@ -88,6 +88,7 @@ class NetworkConfiguration:
     waiting_deadline = None
     hyper_period = None
     utilization = None
+    max_utilization = None
 
     def set_topology_parameters(self, network, link):
         """
@@ -852,7 +853,7 @@ class Network:
             if link_utilization[index] > 1.0:       # Check if is possible to schedule all of its links
                 possible = False
             utilization += link_utilization[index]
-        return utilization / len(link_utilization), possible
+        return utilization / len(link_utilization), max(link_utilization), possible
 
     # Input and Output function definitions #
 
@@ -1535,6 +1536,7 @@ class Network:
         Xml.SubElement(general_information_xml, 'MaximumTimeSwitch').text = str(configuration.maximum_switch)
         Xml.SubElement(general_information_xml, 'HyperPeriod').text = str(configuration.hyper_period)
         Xml.SubElement(general_information_xml, 'Utilization').text = str(configuration.utilization)
+        Xml.SubElement(general_information_xml, 'MaximumLinkUtilization').text = str(configuration.max_utilization)
         replica_str = ''
         for replica in configuration.replicas:
             replica_str += str(replica) + ';'
@@ -1776,12 +1778,13 @@ class Network:
                                            configuration.deadline, configuration.waiting_deadline)
 
             hyper_period = self.calculate_hyper_period(configuration.periods)
-            utilization, schedulable = self.calculate_utilization(hyper_period, configuration.replicas,
-                                                                  configuration.sensing_control_period,
-                                                                  configuration.sensing_control_time)
+            utilization, max_utilization, schedulable = self.calculate_utilization(hyper_period, configuration.replicas,
+                                                                                   configuration.sensing_control_period,
+                                                                                   configuration.sensing_control_time)
 
             configuration.hyper_period = hyper_period
             configuration.utilization = utilization
+            configuration.max_utilization = max_utilization
 
             # If schedulable then, create the network
             if schedulable:

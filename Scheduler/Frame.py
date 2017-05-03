@@ -233,6 +233,23 @@ class TreePath:
         """
         return len(self.__z3_offset)
 
+    def get_path_by_link(self, index_link):
+        """
+        Get the path that has the same index link
+        :param index_link: index of the link
+        :type index_link: int
+        :return: path
+        :rtype: TreePath
+        """
+        if self.__link_id == index_link:        # If we found it, return it
+            return self
+        else:
+            for children in self.__children:    # For all children of the path, call it recursively, if found return
+                found = children.get_path_by_link(index_link)
+                if found:
+                    return found
+        return None                             # The link is not in this path
+
 
 class Frame:
     """

@@ -60,12 +60,20 @@ sensing_control_time = network.get_sensing_control_time_from_xml('Configuration.
 
 print(sensing_control_time)
 """
+import time
+start_time = time.time()
+
 
 #network = nx()
 #network.create_networks_from_xml('Configuration.xml')
 
-#scheduler = Network()
-
 solver = Scheduler()
+solver.one_shot_scheduler('networks/5cdc95402d8850af347a9886acbeaeec/5cdc95402d8850af347a9886acbeaeec', 'Shit')
 
-solver.one_shot_scheduler('networks/7c077a6ff3937cf6a63e446c9fc04dd3/7c077a6ff3937cf6a63e446c9fc04dd3', 'Shit')
+print("--- Synthesis Time %s seconds ---" % (time.time() - start_time))
+
+start_time = time.time()
+
+solver.check_schedule()
+
+print("--- Check Time %s seconds ---" % (time.time() - start_time))

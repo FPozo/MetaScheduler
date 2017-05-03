@@ -3,18 +3,22 @@
     <NetworkGenerator>
         <Topology>
             <TopologyInformation>
-                <NumberCollisionDomains>1</NumberCollisionDomains>
-                <NumberReplicas>2</NumberReplicas>
+                <NumberCollisionDomains>6</NumberCollisionDomains>
+                <NumberReplicas>1;1;1;1;1;1</NumberReplicas>
                 <ReplicaPolicy>Spread</ReplicaPolicy>
-                <ReplicaPolicy>Continuous</ReplicaPolicy>
-                <ReplicaInterArrivalTime unit="us">150</ReplicaInterArrivalTime>
-                <MinTimeSwitch unit="ns">100</MinTimeSwitch>
-                <MaxTimeSwitch unit="us">10</MaxTimeSwitch>
-                <SensingControlPeriod unit="ms">100</SensingControlPeriod>
+                <ReplicaInterArrivalTime unit="us">200</ReplicaInterArrivalTime>
+                <MinTimeSwitch unit="us">1</MinTimeSwitch>
+                <MaxTimeSwitch unit="us">200</MaxTimeSwitch>
+                <SensingControlPeriod unit="us">2000</SensingControlPeriod>
                 <SensingControlTime unit="us">100</SensingControlTime>
-                <SensingControlTime unit="us">0</SensingControlTime>
             </TopologyInformation>
             <Description>
+                <Bifurcation>
+                    <NumberLinks>1</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                </Bifurcation>
                 <Bifurcation>
                     <NumberLinks>2</NumberLinks>
                     <Link category="wired">
@@ -25,15 +29,54 @@
                     </Link>
                 </Bifurcation>
                 <Bifurcation>
-                    <NumberLinks>-3</NumberLinks>
+                    <NumberLinks>1</NumberLinks>
                     <Link category="wired">
-                        <Speed unit="MB/s">50</Speed>
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>2</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
                     </Link>
                     <Link category="wired">
-                        <Speed unit="MB/s">50</Speed>
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>2</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
                     </Link>
                     <Link category="wired">
-                        <Speed unit="MB/s">50</Speed>
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>0</NumberLinks>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>7</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
                     </Link>
                 </Bifurcation>
                 <Bifurcation>
@@ -51,54 +94,509 @@
                         <CollisionDomain>1</CollisionDomain>
                     </Link>
                 </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-1</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-1</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-1</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-1</NumberLinks>
+                    <Link category="wireless">
+                        <Speed unit="MB/s">20</Speed>
+                        <CollisionDomain>2</CollisionDomain>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-1</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-1</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>5</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-1</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-1</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-3</NumberLinks>
+                    <Link category="wireless">
+                        <Speed unit="MB/s">20</Speed>
+                        <CollisionDomain>3</CollisionDomain>
+                    </Link>
+                    <Link category="wireless">
+                        <Speed unit="MB/s">20</Speed>
+                        <CollisionDomain>3</CollisionDomain>
+                    </Link>
+                    <Link category="wireless">
+                        <Speed unit="MB/s">20</Speed>
+                        <CollisionDomain>3</CollisionDomain>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>3</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-3</NumberLinks>
+                    <Link category="wireless">
+                        <Speed unit="MB/s">20</Speed>
+                        <CollisionDomain>4</CollisionDomain>
+                    </Link>
+                    <Link category="wireless">
+                        <Speed unit="MB/s">20</Speed>
+                        <CollisionDomain>4</CollisionDomain>
+                    </Link>
+                    <Link category="wireless">
+                        <Speed unit="MB/s">20</Speed>
+                        <CollisionDomain>4</CollisionDomain>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-3</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-3</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-3</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>7</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-2</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>0</NumberLinks>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>0</NumberLinks>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>3</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-3</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-3</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-3</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>4</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>0</NumberLinks>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>0</NumberLinks>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>0</NumberLinks>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>3</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-3</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-3</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-3</NumberLinks>
+                    <Link category="wireless">
+                        <Speed unit="MB/s">20</Speed>
+                        <CollisionDomain>5</CollisionDomain>
+                    </Link>
+                    <Link category="wireless">
+                        <Speed unit="MB/s">20</Speed>
+                        <CollisionDomain>5</CollisionDomain>
+                    </Link>
+                    <Link category="wireless">
+                        <Speed unit="MB/s">20</Speed>
+                        <CollisionDomain>5</CollisionDomain>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>3</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-3</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-2</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-3</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>6</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">100</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-3</NumberLinks>
+                    <Link category="wireless">
+                        <Speed unit="MB/s">20</Speed>
+                        <CollisionDomain>6</CollisionDomain>
+                    </Link>
+                    <Link category="wireless">
+                        <Speed unit="MB/s">20</Speed>
+                        <CollisionDomain>6</CollisionDomain>
+                    </Link>
+                    <Link category="wireless">
+                        <Speed unit="MB/s">20</Speed>
+                        <CollisionDomain>6</CollisionDomain>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-3</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-3</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-3</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-3</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                </Bifurcation>
+                <Bifurcation>
+                    <NumberLinks>-6</NumberLinks>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                    <Link category="wired">
+                        <Speed unit="MB/s">50</Speed>
+                    </Link>
+                </Bifurcation>
             </Description>
         </Topology>
         <Traffic>
             <TrafficInformation>
-                <NumberFrames>100</NumberFrames>
-                <Single>0.2</Single>
+                <NumberFrames>20</NumberFrames>
+                <Single>0.5</Single>
                 <Local>0.2</Local>
-                <Multiple>0.3</Multiple>
-                <Broadcast>0.3</Broadcast>
+                <Multiple>0.1</Multiple>
+                <Broadcast>0.2</Broadcast>
             </TrafficInformation>
             <FrameDescription>
                 <FrameType>
-                    <Period unit="ms">1000</Period>
-                    <Deadline unit="ms">1000</Deadline>
-                    <Size unit="Bytes">1500</Size>
-                    <Percentage>0.7</Percentage>
+                    <Period unit="us">400</Period>
+                    <Deadline unit="us">400</Deadline>
+                    <Size unit="Bytes">1000</Size>
+                    <Percentage>0.1</Percentage>
                 </FrameType>
                 <FrameType>
-                    <Period unit="ms">2000</Period>
-                    <Deadline unit="ms">800</Deadline>
-                    <Size unit="Bytes">1000</Size>
+                    <Period unit="us">800</Period>
+                    <Deadline unit="us">400</Deadline>
+                    <Size unit="Bytes">500</Size>
+                    <Percentage>0.1</Percentage>
+                </FrameType>
+                <FrameType>
+                    <Period unit="us">2400</Period>
+                    <Deadline unit="us">1920</Deadline>
+                    <Size unit="Bytes">1500</Size>
                     <Percentage>0.3</Percentage>
                 </FrameType>
+                <FrameType>
+                    <Period unit="us">4800</Period>
+                    <Deadline unit="us">400</Deadline>
+                    <Size unit="Bytes">200</Size>
+                    <Percentage>0.5</Percentage>
+                </FrameType>
             </FrameDescription>
-            <Dependencies>
-                <NumberDependencies>10</NumberDependencies>
-                <MinDepth>1</MinDepth>
-                <MaxDepth>3</MaxDepth>
-                <MinChildren>1</MinChildren>
-                <MaxChildren>3</MaxChildren>
-                <MinTimeWaiting unit="ms">10</MinTimeWaiting>
-                <MaxTimeWaiting unit="ms">30</MaxTimeWaiting>
-                <MinTimeDeadline unit="ms">50</MinTimeDeadline>
-                <MaxTimeDeadline unit="ms">100</MaxTimeDeadline>
-                <Waiting>0.3</Waiting>
-                <Deadline>0.5</Deadline>
-                <WaitingDeadline>0.2</WaitingDeadline>
-            </Dependencies>
             <Dependencies>
                 <NumberDependencies>0</NumberDependencies>
                 <MinDepth>1</MinDepth>
                 <MaxDepth>3</MaxDepth>
                 <MinChildren>1</MinChildren>
                 <MaxChildren>3</MaxChildren>
-                <MinTimeWaiting unit="ms">100</MinTimeWaiting>
-                <MaxTimeWaiting unit="ms">300</MaxTimeWaiting>
-                <MinTimeDeadline unit="ms">2500</MinTimeDeadline>
-                <MaxTimeDeadline unit="ms">8000</MaxTimeDeadline>
+                <MinTimeWaiting unit="us">100</MinTimeWaiting>
+                <MaxTimeWaiting unit="us">150</MaxTimeWaiting>
+                <MinTimeDeadline unit="us">200</MinTimeDeadline>
+                <MaxTimeDeadline unit="us">250</MaxTimeDeadline>
                 <Waiting>0.3</Waiting>
                 <Deadline>0.5</Deadline>
                 <WaitingDeadline>0.2</WaitingDeadline>

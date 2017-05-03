@@ -132,6 +132,13 @@ class Scheduler:
 
         return True
 
+    def check_schedule(self):
+        """
+        Checks if the generated schedule satisfies the constraints
+        :return: 
+        """
+        print('The schedule found is => ' + str(self.__network.check_schedule()))
+
     # Output XML functions
 
     def __generate_schedule_xml(self, input_name, output_name):
