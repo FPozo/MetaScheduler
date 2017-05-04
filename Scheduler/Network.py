@@ -555,6 +555,15 @@ class Network:
                         if (distance < dependency.get_waiting()) or \
                                 (dependency.get_deadline() != 0 and distance > dependency.get_deadline()):
                             logging.debug('Checked error in dependency')
+                            logging.debug('Frame => ' + str(frame_index))
+                            logging.debug('Link => ' + str(link))
+                            logging.debug('Offset => ' + str(path.get_offset(0, 0)))
+                            logging.debug('Parent Frame => ' + str(dependency.get_parent().get_frame_index()))
+                            logging.debug('Parent Link => ' + str(parent_link))
+                            logging.debug('Parent Offset => ' + str(parent_path.get_offset(0, 0)))
+                            logging.debug('Waiting => ' + str(dependency.get_waiting()))
+                            logging.debug('Deadline => ' + str(dependency.get_deadline()))
+                            logging.debug('Distance => ' + str(distance))
                             return False
 
         return True

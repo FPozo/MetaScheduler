@@ -27,7 +27,7 @@ class TreePath:
     __link_id = None
     __transmission_time = None
     __offset = []
-    __z3_offset = []
+    __name_offset = []
     __parent = None
     __children = []
 
@@ -37,7 +37,7 @@ class TreePath:
         self.__link_id = None
         self.__transmission_time = None
         self.__offset = []
-        self.__z3_offset = []
+        self.__name_offset = []
         self.__parent = None
         self.__children = []
 
@@ -105,10 +105,10 @@ class TreePath:
         """
         for _ in range(num_instances):
             self.__offset.append([])
-            self.__z3_offset.append([])
+            self.__name_offset.append([])
             for __ in range(num_replicas):
                 self.__offset[-1].append(None)
-                self.__z3_offset[-1].append(None)
+                self.__name_offset[-1].append(None)
 
     def get_children(self):
         """
@@ -157,15 +157,15 @@ class TreePath:
         else:
             self.__offset[index_instance][index_replica] = time
 
-    def get_z3_offset(self, index_instance, index_replica):
+    def get_name_offset(self, index_instance, index_replica):
         """
-        Get the Z3 variable
+        Get the name variable
         :param index_instance: instance index 
         :param index_replica: replica index
-        :return: the Z3 variable
-        :rtype: ArithRef
+        :return: the name variable
+        :rtype: str
         """
-        return self.__z3_offset[index_instance][index_replica]
+        return self.__name_offset[index_instance][index_replica]
 
     def get_offset(self, index_instance, index_replica):
         """
@@ -179,18 +179,21 @@ class TreePath:
         """
         return self.__offset[index_instance][index_replica]
 
-    def init_z3_offset(self, name):
+    def init_name_offset(self, file, name):
         """
-        Set all the z3 offsets in the matrix
+        Set all the name offsets in the matrix
         :param name: the start of the name o_frame_link, it needs _instance_replica
+        :param file: file where to write the declaration of names
         :type name: str
         :return: 
+        :rtype: 
         """
-        # For all values in the z3 matrix, complete the final name and init the z3 variable as integer
-        for row_index, row in enumerate(self.__z3_offset):
+        # For all values in the matrix, complete the final name
+        for row_index, row in enumerate(self.__name_offset):
             for column_index, _ in enumerate(row):
                 final_name = name + '_' + str(row_index) + '_' + str(column_index)
-                self.__z3_offset[row_index][column_index] = Int(final_name)
+                self.__name_offset[row_index][column_index] = final_name
+                file.write("(declare-fun " + final_name + " () Int)\n")
 
     def add_new_path(self, path):
         """
@@ -223,7 +226,7 @@ class TreePath:
         :return: number of replicas
         _:rtype: int
         """
-        return len(self.__z3_offset[0])
+        return len(self.__name_offset[0])
 
     def get_num_instances(self):
         """
@@ -231,7 +234,7 @@ class TreePath:
         :return: number of instances
         _rtype: int
         """
-        return len(self.__z3_offset)
+        return len(self.__name_offset)
 
     def get_path_by_link(self, index_link):
         """
@@ -339,7 +342,7 @@ class Frame:
     def get_splits(self):
         """
         Get the matrix of splits
-        :return: matrix of slipts
+        :return: matrix of splits
         :rtype: list of list of int
         """
         return self.__splits

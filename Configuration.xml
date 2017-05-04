@@ -9,7 +9,7 @@
                 <ReplicaInterArrivalTime unit="us">200</ReplicaInterArrivalTime>
                 <MinTimeSwitch unit="us">1</MinTimeSwitch>
                 <MaxTimeSwitch unit="us">200</MaxTimeSwitch>
-                <SensingControlPeriod unit="us">2000</SensingControlPeriod>
+                <SensingControlPeriod unit="ms">2000</SensingControlPeriod>
                 <SensingControlTime unit="us">100</SensingControlTime>
             </TopologyInformation>
             <Description>
@@ -555,7 +555,7 @@
         </Topology>
         <Traffic>
             <TrafficInformation>
-                <NumberFrames>20</NumberFrames>
+                <NumberFrames>100</NumberFrames>
                 <Single>0.5</Single>
                 <Local>0.2</Local>
                 <Multiple>0.1</Multiple>
@@ -563,26 +563,26 @@
             </TrafficInformation>
             <FrameDescription>
                 <FrameType>
-                    <Period unit="us">400</Period>
-                    <Deadline unit="us">400</Deadline>
+                    <Period unit="ms">400</Period>
+                    <Deadline unit="ms">400</Deadline>
                     <Size unit="Bytes">1000</Size>
                     <Percentage>0.1</Percentage>
                 </FrameType>
                 <FrameType>
-                    <Period unit="us">800</Period>
-                    <Deadline unit="us">400</Deadline>
+                    <Period unit="ms">800</Period>
+                    <Deadline unit="ms">800</Deadline>
                     <Size unit="Bytes">500</Size>
                     <Percentage>0.1</Percentage>
                 </FrameType>
                 <FrameType>
-                    <Period unit="us">2400</Period>
-                    <Deadline unit="us">1920</Deadline>
+                    <Period unit="ms">2400</Period>
+                    <Deadline unit="ms">1920</Deadline>
                     <Size unit="Bytes">1500</Size>
                     <Percentage>0.3</Percentage>
                 </FrameType>
                 <FrameType>
-                    <Period unit="us">4800</Period>
-                    <Deadline unit="us">400</Deadline>
+                    <Period unit="ms">4800</Period>
+                    <Deadline unit="ms">4800</Deadline>
                     <Size unit="Bytes">200</Size>
                     <Percentage>0.5</Percentage>
                 </FrameType>

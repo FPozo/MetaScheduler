@@ -61,19 +61,34 @@ sensing_control_time = network.get_sensing_control_time_from_xml('Configuration.
 print(sensing_control_time)
 """
 import time
-start_time = time.time()
 
 
-#network = nx()
-#network.create_networks_from_xml('Configuration.xml')
+
+network = nx()
+network.create_networks_from_xml('Configuration.xml')
 
 solver = Scheduler()
-solver.one_shot_scheduler('networks/5cdc95402d8850af347a9886acbeaeec/5cdc95402d8850af347a9886acbeaeec', 'Shit')
-
-print("--- Synthesis Time %s seconds ---" % (time.time() - start_time))
 
 start_time = time.time()
+solver.incremental_approach('networks/58b3f406528fecb51a91d1533610774d/58b3f406528fecb51a91d1533610774d', 'Shit')
+print("--- Total Time Incremental Process  %s seconds ---" % (time.time() - start_time))
 
+start_time = time.time()
 solver.check_schedule()
+print("--- Check Time %s seconds ---" % (time.time() - start_time))
 
+#start_time = time.time()
+
+#solver.check_schedule()
+
+#print("--- Check Time %s seconds ---" % (time.time() - start_time))
+
+solver = Scheduler()
+
+start_time = time.time()
+solver.one_shot_scheduler('networks/58b3f406528fecb51a91d1533610774d/58b3f406528fecb51a91d1533610774d', 'Shit')
+print("--- Total Time One-Shot Process  %s seconds ---" % (time.time() - start_time))
+
+start_time = time.time()
+solver.check_schedule()
 print("--- Check Time %s seconds ---" % (time.time() - start_time))

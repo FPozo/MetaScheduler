@@ -108,11 +108,12 @@ class Scheduler:
 
         # Init the solver and the constraints
         self.__SMT_solver = Z3Synthesizer()                 # Init the SMT solver Z3
+
         # Init the Z3 variables in the frames
         self.__SMT_solver.init_z3_variables(self.__network, self.__frame_queue, 0, self.__network.get_hyper_period())
 
         # Add all the constraints
-        self.__SMT_solver.contention_free(self.__network, self.__frame_queue, None, 0,
+        self.__SMT_solver.contention_free(self.__network, self.__frame_queue, [], 0,
                                           self.__network.get_hyper_period())
         self.__SMT_solver.path_dependent(self.__network, self.__frame_queue)
         self.__SMT_solver.switch_memory(self.__network, self.__frame_queue)
@@ -125,11 +126,72 @@ class Scheduler:
             logging.debug('We miserably failed')
             return False
 
-        self.__SMT_solver.create_model()
-        self.__SMT_solver.fix_offsets(self.__network, self.__frame_queue)
+        self.__SMT_solver.save_solution(self.__network, self.__frame_queue)
 
         self.__generate_schedule_xml(input_name, output_name)
 
+        return True
+
+    def incremental_approach(self, input_name, output_name):
+        """
+        Schedules the network in one call of the smt solver
+        :param input_name: network input xml file name with the relative direction
+        :param output_name: schedule output xml file name with the relative direction
+        :return: True if schedule was found, False otherwise
+        r:type: Boolean
+        """
+        # Read the network and add all information
+        self.__network = Network()
+        self.__network.parse_network_xml(input_name)
+
+        dependencies = self.__network.get_dependencies()       # Get the dependency trees to accelerate everything
+        # Create the frame queue (without absolute deadline as is not needed in the one shot scheduler)
+        for index in range(self.__network.get_number_frames()):
+            self.__frame_queue.append(FrameBlock(index, None))
+            # If the frame has a dependency, link it
+            self.__frame_queue[-1].set_dependency_linker(dependencies.get_dependency_by_frame(index))
+
+        # Variables for the iteration of the scheduler
+        starting_frame = 0
+        step_size = 5
+
+        # Init the solver and the constraints
+        self.__SMT_solver = Z3Synthesizer()                 # Init the SMT solver Z3
+
+        # While there are frames to schedule, iterate
+        while starting_frame < self.__network.get_number_frames():
+
+            # Create the frame queues that we are going to use
+            current_frame_queue = self.__frame_queue[starting_frame:starting_frame + step_size]
+            if starting_frame - 1 >= 0:
+                previous_frame_queue = self.__frame_queue[:starting_frame]
+            else:
+                previous_frame_queue = []
+
+            # Add all the constraints
+            # Init the Z3 variables in the frames
+            self.__SMT_solver.init_z3_variables(self.__network, current_frame_queue, 0,
+                                                self.__network.get_hyper_period())
+            self.__SMT_solver.contention_free(self.__network, current_frame_queue, previous_frame_queue, 0,
+                                              self.__network.get_hyper_period())
+            self.__SMT_solver.path_dependent(self.__network, current_frame_queue)
+            self.__SMT_solver.switch_memory(self.__network, current_frame_queue)
+            self.__SMT_solver.simultaneous_dispatch(self.__network, current_frame_queue)
+            self.__SMT_solver.dependencies_constraints(self.__network, current_frame_queue)
+
+            # If it is satisfiable, create the model and save the values
+            if self.__SMT_solver.check_satisfiability():
+                logging.debug(
+                'Scheduled Frame [' + str(starting_frame) + '-' + str(starting_frame + step_size - 1) + ']')
+                self.__SMT_solver.save_solution(self.__network, current_frame_queue)
+                starting_frame += step_size
+                self.__SMT_solver.load_fixed_values(self.__network, self.__frame_queue[:starting_frame])
+            else:
+                logging.debug('We miserably failed')
+                return False
+
+        self.__generate_schedule_xml(input_name, output_name)
+        logging.debug('Eureka')
         return True
 
     def check_schedule(self):
