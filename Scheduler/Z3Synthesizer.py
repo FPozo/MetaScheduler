@@ -25,12 +25,14 @@ class Z3Synthesizer:
 
     __smt_lib_file = None
     __solution_file = None
+    __time_checking = None
 
     # Standard function definitions #
 
     def __init__(self):
         self.__smt_lib_file = open("Constraints.smt", "w")
         self.__smt_lib_file.write("(set-logic QF_LIA)\n")
+        self.__time_checking = 0
 
     def init_z3_variables(self, network, frames, starting_time, ending_time):
         """
@@ -75,8 +77,10 @@ class Z3Synthesizer:
                 # Set the first instance and first replica larger than starting_time (others do not need as they relate
                 # with the [0][0] z3 integer variable)
                 offset = path.get_name_offset(0, 0)
-                self.__smt_lib_file.write("(assert (>= " + offset + " " + str(starting_time) + "))\n")
-                self.__smt_lib_file.write("(assert (< " + offset + " " + str(end_time) + "))\n")
+                # self.__smt_lib_file.write("(assert (>= " + offset + " " + str(starting_time) + "))\n")
+                # self.__smt_lib_file.write("(assert (< " + offset + " " + str(end_time) + "))\n")
+                self.__smt_lib_file.write("(assert (<= " + offset + " " + str(-starting_time) + "))\n")
+                self.__smt_lib_file.write("(assert (> " + offset + " (- " + str(end_time) + ")))\n")
 
                 # Set the offsets for the rest of the offset matrix
                 for instance in range(path.get_num_instances()):
@@ -85,7 +89,9 @@ class Z3Synthesizer:
                             # Calculate the value between the offset [0][0] and the current one
                             value = (instance * network.get_frame_period(frame_index)) + (replica * replica_interval)
                             offset2 = path.get_name_offset(instance, replica)
-                            self.__smt_lib_file.write("(assert (= " + offset2 + " (+ " + offset + " " +
+                            # self.__smt_lib_file.write("(assert (= " + offset2 + " (+ " + offset + " " +
+                            #                          str(value) + ")))\n")
+                            self.__smt_lib_file.write("(assert (= " + offset2 + " (- " + offset + " " +
                                                       str(value) + ")))\n")
 
         # Init the sensing and control also if is the first call of this function
@@ -100,7 +106,8 @@ class Z3Synthesizer:
                 for instance in range(path.get_num_instances()):
                     value = instance * network.get_sensing_control_period()
                     offset = path.get_name_offset(instance, 0)
-                    self.__smt_lib_file.write("(assert (= " + offset + " " + str(value) + "))\n")
+                    # self.__smt_lib_file.write("(assert (= " + offset + " " + str(value) + "))\n")
+                    self.__smt_lib_file.write("(assert (= " + offset + " (- " + str(value) + ")))\n")
                     path.set_offset(instance, 0, value)
 
     def contention_free(self, network, frames, previous_frames, starting_time, ending_time):
@@ -151,9 +158,15 @@ class Z3Synthesizer:
                                         for prev_replica in range(previous_path.get_num_replicas()):
                                             prev_offset = previous_path.get_name_offset(previous_instance, prev_replica)
 
-                                            self.__smt_lib_file.write("(assert (or (< (+ " + offset + " " +
+                                            # self.__smt_lib_file.write("(assert (or (< (+ " + offset + " " +
+                                            #                          str(path.get_transmission_time()) + ") " +
+                                            #                          prev_offset + ") (>= " + offset + " (+ " +
+                                            #                          prev_offset + " " +
+                                            #                          str(previous_path.get_transmission_time()) +
+                                            #                          "))))\n")
+                                            self.__smt_lib_file.write("(assert (or (> (- " + offset + " " +
                                                                       str(path.get_transmission_time()) + ") " +
-                                                                      prev_offset + ") (>= " + offset + " (+ " +
+                                                                      prev_offset + ") (<= " + offset + " (- " +
                                                                       prev_offset + " " +
                                                                       str(previous_path.get_transmission_time()) +
                                                                       "))))\n")
@@ -187,9 +200,15 @@ class Z3Synthesizer:
                                         for prev_replica in range(previous_path.get_num_replicas()):
                                             prev_offset = previous_path.get_name_offset(previous_instance, prev_replica)
 
-                                            self.__smt_lib_file.write("(assert (or (< (+ " + offset + " " +
+                                            # self.__smt_lib_file.write("(assert (or (< (+ " + offset + " " +
+                                            #                          str(path.get_transmission_time()) + ") " +
+                                            #                          prev_offset + ") (>= " + offset + " (+ " +
+                                            #                          prev_offset + " " +
+                                            #                          str(previous_path.get_transmission_time()) +
+                                            #                          "))))\n")
+                                            self.__smt_lib_file.write("(assert (or (> (- " + offset + " " +
                                                                       str(path.get_transmission_time()) + ") " +
-                                                                      prev_offset + ") (>= " + offset + " (+ " +
+                                                                      prev_offset + ") (<= " + offset + " (- " +
                                                                       prev_offset + " " +
                                                                       str(previous_path.get_transmission_time()) +
                                                                       "))))\n")
@@ -215,9 +234,14 @@ class Z3Synthesizer:
                                 for sensing_instance in range(sensing_min_instances, sensing_max_instances):
                                     sensing_offset = sensing_path.get_name_offset(sensing_instance, 0)
 
-                                    self.__smt_lib_file.write("(assert (or (< (+ " + offset + " " +
+                                    # self.__smt_lib_file.write("(assert (or (< (+ " + offset + " " +
+                                    #                          str(path.get_transmission_time()) + ") " +
+                                    #                          sensing_offset + ") (>= " + offset + " (+ " +
+                                    #                          sensing_offset + " " +
+                                    #                          str(sensing_path.get_transmission_time()) + "))))\n")
+                                    self.__smt_lib_file.write("(assert (or (> (- " + offset + " " +
                                                               str(path.get_transmission_time()) + ") " +
-                                                              sensing_offset + ") (>= " + offset + " (+ " +
+                                                              sensing_offset + ") (<= " + offset + " (- " +
                                                               sensing_offset + " " +
                                                               str(sensing_path.get_transmission_time()) + "))))\n")
 
@@ -239,7 +263,9 @@ class Z3Synthesizer:
                 for child_path in path.get_children():
                     offset_child = child_path.get_name_offset(0, 0)
                     # Offset_child_path > Offset_parent_path + minimum_time_switch
-                    self.__smt_lib_file.write("(assert (>= " + offset_child + " (+ " + offset_parent + " " +
+                    # self.__smt_lib_file.write("(assert (>= " + offset_child + " (+ " + offset_parent + " " +
+                    #                          str(network.get_minimum_time_switch()) + ")))\n")
+                    self.__smt_lib_file.write("(assert (<= " + offset_child + " (- " + offset_parent + " " +
                                               str(network.get_minimum_time_switch()) + ")))\n")
 
     def switch_memory(self, network, frames):
@@ -260,7 +286,7 @@ class Z3Synthesizer:
                 for child_path in path.get_children():
                     offset_child = child_path.get_name_offset(0, 0)
                     # Offset_child_path > Offset_parent_path + minimum_time_switch
-                    self.__smt_lib_file.write("(assert (< " + offset_child + " (+ " + offset_parent + " " +
+                    self.__smt_lib_file.write("(assert (> " + offset_child + " (- " + offset_parent + " " +
                                               str(network.get_maximum_time_switch()) + ")))\n")
 
     def simultaneous_dispatch(self, network, frames):
@@ -316,12 +342,18 @@ class Z3Synthesizer:
                     successor_offset = successor_path.get_name_offset(0, 0)
 
                     if dependency.get_deadline() > 0:  # If there are deadline dependency
-                        self.__smt_lib_file.write("(assert (< " + successor_offset + "(+ " + predecessor_offset + " "
+                        # self.__smt_lib_file.write("(assert (< " + successor_offset + "(+ " + predecessor_offset + " "
+                        #                          + str(dependency.get_deadline()) + ")))\n")
+                        # self.__smt_lib_file.write("(assert (> " + successor_offset + " " +
+                        # predecessor_offset + "))\n")
+                        self.__smt_lib_file.write("(assert (> " + successor_offset + "(- " + predecessor_offset + " "
                                                   + str(dependency.get_deadline()) + ")))\n")
-                        self.__smt_lib_file.write("(assert (> " + successor_offset + " " + predecessor_offset + "))\n")
+                        self.__smt_lib_file.write("(assert (< " + successor_offset + " " + predecessor_offset + "))\n")
                         # Also has to be after at least, so waiting > 0
                     if dependency.get_waiting() > 0:  # If there are waiting dependency
-                        self.__smt_lib_file.write("(assert (> " + successor_offset + "(+ " + predecessor_offset + " "
+                        # self.__smt_lib_file.write("(assert (> " + successor_offset + "(+ " + predecessor_offset + " "
+                        #                          + str(dependency.get_waiting()) + ")))\n")
+                        self.__smt_lib_file.write("(assert (< " + successor_offset + "(- " + predecessor_offset + " "
                                                   + str(dependency.get_waiting()) + ")))\n")
 
     def check_satisfiability(self):
@@ -336,7 +368,8 @@ class Z3Synthesizer:
 
         start_time = time.time()
         subprocess.run('/usr/local/bin/yices-smt2 Constraints.smt > Solution.smt', stdout=subprocess.PIPE, shell=True)
-        print("--- Check Time Yices %s seconds ---" % (time.time() - start_time))
+        self.__time_checking += time.time() - start_time
+        print("--- Check Time Yices Accumulated %s seconds ---" % self.__time_checking)
 
         """ Uses z3 solver, but is shit
         start_time = time.time()
@@ -366,13 +399,18 @@ class Z3Synthesizer:
             offset_information = words[1].split('_')
             if offset_information[0] == 'Offset':  # If is the information of an offset
                 frame = int(offset_information[1])
-                link = int(offset_information[2])
-                instance = int(offset_information[3])
-                replica = int(offset_information[4])
-                #frame_index = frames[frame].get_frame_index()
-                path = network.get_frame_path_from_link(frame, link)
-                offset_value = int(words[2].split(')')[0])
-                path.set_offset(instance, replica, offset_value)
+                for frame_index in frames:
+                    if frame_index.get_frame_index() == frame:
+                        link = int(offset_information[2])
+                        instance = int(offset_information[3])
+                        replica = int(offset_information[4])
+                        path = network.get_frame_path_from_link(frame, link)
+                        try:
+                            offset_value = int(words[2].split(')')[0])
+                        except ValueError:      # If we go here, the number is negative and is in the next position!
+                            offset_value = int(words[3].split(')')[0])
+                        path.set_offset(instance, replica, offset_value)
+                        break
         self.__solution_file.close()
 
     def load_fixed_values(self, network, frames):
@@ -397,8 +435,8 @@ class Z3Synthesizer:
                         name = 'Offset_' + str(frame_index) + '_' + str(path.get_link_id()) + '_' + str(instance) \
                                + '_' + str(replica)
                         self.__smt_lib_file.write("(declare-fun " + name + " () Int)\n")
-                        self.__smt_lib_file.write("(assert (= " + name + " " + str(path.get_offset(instance, replica))
-                                                  + "))\n")
+                        self.__smt_lib_file.write("(assert (= " + name + " (- "
+                                                  + str(path.get_offset(instance, replica)) + ")))\n")
 
         """# Also load values of the sensing and control
         if network.get_sensing_control_period():
@@ -406,5 +444,5 @@ class Z3Synthesizer:
                 for instance in range(path.get_num_instances()):
                     name = 'Sensing_Control_' + str(path.get_link_id()) + '_' + str(instance)
                     value = instance * network.get_sensing_control_period()
-                    self.__smt_lib_file.write("(assert (= " + name + " " + str(value) + "))\n")
+                    self.__smt_lib_file.write("(assert (= " + name + " " + str(-value) + "))\n")
         """

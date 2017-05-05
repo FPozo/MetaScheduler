@@ -64,29 +64,29 @@ import time
 
 
 
-network = nx()
-network.create_networks_from_xml('Configuration.xml')
+#network = nx()
+#network.create_networks_from_xml('Configuration.xml')
 
 solver = Scheduler()
 
 start_time = time.time()
-solver.incremental_approach('networks/58b3f406528fecb51a91d1533610774d/58b3f406528fecb51a91d1533610774d', 'Shit')
+solver.incremental_approach('networks/db95cb5826b5018e3ec0adb367721e07/db95cb5826b5018e3ec0adb367721e07', 'Shit')
 print("--- Total Time Incremental Process  %s seconds ---" % (time.time() - start_time))
 
 start_time = time.time()
 solver.check_schedule()
 print("--- Check Time %s seconds ---" % (time.time() - start_time))
 
-#start_time = time.time()
+start_time = time.time()
 
-#solver.check_schedule()
+solver.check_schedule()
 
-#print("--- Check Time %s seconds ---" % (time.time() - start_time))
+print("--- Check Time %s seconds ---" % (time.time() - start_time))
 
 solver = Scheduler()
 
 start_time = time.time()
-solver.one_shot_scheduler('networks/58b3f406528fecb51a91d1533610774d/58b3f406528fecb51a91d1533610774d', 'Shit')
+solver.one_shot_scheduler('networks/db95cb5826b5018e3ec0adb367721e07/db95cb5826b5018e3ec0adb367721e07', 'Shit')
 print("--- Total Time One-Shot Process  %s seconds ---" % (time.time() - start_time))
 
 start_time = time.time()

@@ -181,8 +181,6 @@ class Scheduler:
 
             # If it is satisfiable, create the model and save the values
             if self.__SMT_solver.check_satisfiability():
-                logging.debug(
-                'Scheduled Frame [' + str(starting_frame) + '-' + str(starting_frame + step_size - 1) + ']')
                 self.__SMT_solver.save_solution(self.__network, current_frame_queue)
                 starting_frame += step_size
                 self.__SMT_solver.load_fixed_values(self.__network, self.__frame_queue[:starting_frame])

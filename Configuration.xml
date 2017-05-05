@@ -555,7 +555,7 @@
         </Topology>
         <Traffic>
             <TrafficInformation>
-                <NumberFrames>100</NumberFrames>
+                <NumberFrames>30</NumberFrames>
                 <Single>0.5</Single>
                 <Local>0.2</Local>
                 <Multiple>0.1</Multiple>
