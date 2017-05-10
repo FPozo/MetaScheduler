@@ -6,9 +6,9 @@
                 <NumberCollisionDomains>6</NumberCollisionDomains>
                 <NumberReplicas>1;1;1;1;1;1</NumberReplicas>
                 <ReplicaPolicy>Spread</ReplicaPolicy>
-                <ReplicaInterArrivalTime unit="us">200</ReplicaInterArrivalTime>
+                <ReplicaInterArrivalTime unit="us">10</ReplicaInterArrivalTime>
                 <MinTimeSwitch unit="us">1</MinTimeSwitch>
-                <MaxTimeSwitch unit="us">200</MaxTimeSwitch>
+                <MaxTimeSwitch unit="us">10</MaxTimeSwitch>
                 <SensingControlPeriod unit="ms">2000</SensingControlPeriod>
                 <SensingControlTime unit="us">100</SensingControlTime>
             </TopologyInformation>
@@ -555,7 +555,7 @@
         </Topology>
         <Traffic>
             <TrafficInformation>
-                <NumberFrames>30</NumberFrames>
+                <NumberFrames>100</NumberFrames>
                 <Single>0.5</Single>
                 <Local>0.2</Local>
                 <Multiple>0.1</Multiple>
@@ -588,15 +588,15 @@
                 </FrameType>
             </FrameDescription>
             <Dependencies>
-                <NumberDependencies>0</NumberDependencies>
+                <NumberDependencies>25</NumberDependencies>
                 <MinDepth>1</MinDepth>
                 <MaxDepth>3</MaxDepth>
                 <MinChildren>1</MinChildren>
                 <MaxChildren>3</MaxChildren>
                 <MinTimeWaiting unit="us">100</MinTimeWaiting>
                 <MaxTimeWaiting unit="us">150</MaxTimeWaiting>
-                <MinTimeDeadline unit="us">200</MinTimeDeadline>
-                <MaxTimeDeadline unit="us">250</MaxTimeDeadline>
+                <MinTimeDeadline unit="ms">2</MinTimeDeadline>
+                <MaxTimeDeadline unit="ms">3</MaxTimeDeadline>
                 <Waiting>0.3</Waiting>
                 <Deadline>0.5</Deadline>
                 <WaitingDeadline>0.2</WaitingDeadline>

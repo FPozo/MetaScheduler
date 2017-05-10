@@ -128,6 +128,19 @@ class DependencyNode:
         """
         return self.__link_index
 
+    def get_maximum_waiting_time_node(self):
+        """
+        Get the waiting maximum time for the current node
+        :return: maximum waiting time
+        :rtype: int
+        """
+        # If it does not have more children, return the waiting time, or 1 if it only has deadline
+        if len(self.__children) == 0:
+            return 1
+        # If it has more children, return the children waiting time, and add the maximum from all its children
+        return max([(children.__waiting if children.__waiting > 0 else 1) + children.get_maximum_waiting_time_node()
+                    for children in self.__children])
+
 
 class DependencyTree:
 
@@ -175,3 +188,15 @@ class DependencyTree:
             if found:
                 return found
         return None
+
+    def get_maximum_waiting_time(self, frame_index):
+        """
+        Gets the maximum time that the frame has to wait for the deepest of its children
+        :param frame_index: 
+        :type frame_index: int
+        :return: the maximum waiting time
+        :rtype: int
+        """
+        dependency = self.get_dependency_by_frame(frame_index)
+        if dependency is not None:
+            return dependency.get_maximum_waiting_time_node()

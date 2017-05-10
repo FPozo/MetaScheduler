@@ -272,6 +272,14 @@ class Network:
         """
         return self.__dependencies
 
+    def get_frames(self):
+        """
+        Get the list of frames in the network
+        :return: list of all the frames
+        :rtype: list of Frame
+        """
+        return self.__frames
+
     # Input XML Functions
 
     def __get_network_information_xml(self, filename):
@@ -472,6 +480,16 @@ class Network:
                                                 other_offset = other_path.get_offset(other_instance, other_replica)
                                                 if (offset < other_offset + other_path.get_transmission_time()) and \
                                                         (offset + path.get_transmission_time() > other_offset):
+                                                    logging.debug('Offset name => ' + str(frame_index) + '_' +
+                                                                  str(path.get_link_id()) + '_' + str(instance) + '_' +
+                                                                  str(replica))
+                                                    logging.debug('Offset value => ' + str(offset) + ' + ' +
+                                                                  str(path.get_transmission_time()))
+                                                    logging.debug('Other Offset name => ' + str(other_frame_index) + '_'
+                                                                  + str(other_path.get_link_id()) + '_' +
+                                                                  str(other_instance) + '_' + str(other_replica))
+                                                    logging.debug('Offset value => ' + str(other_offset) + ' + ' +
+                                                                  str(other_path.get_transmission_time()))
                                                     logging.debug('Checked error in contention free')
                                                     return False
 
@@ -483,6 +501,14 @@ class Network:
                                         other_offset = sensing_path.get_offset(sensing_instance, 0)
                                         if (offset < other_offset + sensing_path.get_transmission_time()) and \
                                                 (offset + path.get_transmission_time() > other_offset):
+                                            logging.debug('Offset name => ' + str(frame_index) + '_' +
+                                                          str(path.get_link_id()) + '_' + str(instance) + '_' +
+                                                          str(replica))
+                                            logging.debug('Offset value => ' + str(offset))
+                                            logging.debug('Sensing name => ' + str(sensing_path.get_link_id()) + '_' +
+                                                          str(sensing_instance))
+                                            logging.debug('Offset value => ' + str(other_offset))
+                                            logging.debug('Sensing Control Time => ' + str(self.__sensing_control_time))
                                             logging.debug('Checked error in contention free for sensing and control')
                                             return False
 
